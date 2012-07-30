@@ -1,0 +1,13 @@
+This is the README file for the retroutils repository.
+
+This repository contains utilities developed to work with the SIMH 
+classic computer simulators. 
+
+INDEX OF UTILITIES
+
+bin2load:	Tool to convert an a.out executable or a memory binary image
+		file to the format that the "load" command of the PDP-11
+		simulator understands ("paper tape format")
+
+
+
