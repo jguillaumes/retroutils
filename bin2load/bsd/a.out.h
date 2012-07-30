@@ -33,6 +33,13 @@
  *	@(#)a.out.h	5.6.1 (2.11BSD GTE) 1/6/94
  */
 
+
+/*
+** This code has been pulled from the 2.11BSD source tree.
+**
+** The differences respect the original code are marked with
+** comment blocks.
+*/
 #ifndef	_AOUT_H_
 #define	_AOUT_H_
 
@@ -56,6 +63,12 @@
  * must pass an extended header ('xexec') as the argument.
 */
 
+/*
+** Note: the following block has been commented out for its inclusion
+** in bin2load.  
+*/
+
+/********************************************************************
 #include <sys/types.h>
 
 off_t	n_stroff(), n_symoff(), n_datoff(), n_dreloc(), n_treloc();
@@ -66,7 +79,15 @@ off_t	n_stroff(), n_symoff(), n_datoff(), n_dreloc(), n_treloc();
 #define	N_DRELOC(e) (n_dreloc(&e))
 #define	N_TRELOC(e) (n_treloc(&e))
 
+********************************************************************/
+
 #define	_AOUT_INCLUDE_
-#include <nlist.h>
+
+/*
+** The following line has been commented out for its inclussion in
+** bin2load
+*/
+
+/* #include <nlist.h> */
 
 #endif	/* !_AOUT_H_ */

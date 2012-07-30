@@ -6,10 +6,21 @@
  *	@(#)exec.h	1.2 (2.11BSD GTE) 10/31/93
  */
 
+/*
+** This code has been pulled from the 2.11BSD source tree.
+**
+** The differences respect the original code are marked with
+** comment blocks.
+*/
+
+
+
 #ifndef _EXEC_
 #define _EXEC_
 /*
  * Header prepended to each a.out file.
+ * 
+ * CHANGED FOR bin2load:
  *
  * In the original 2.11BSD version the members of the exec structure
  * were declared as int. They have been changed to short to force
@@ -33,12 +44,19 @@ unsigned short	ov_siz[NOVL];	/* size of i'th overlay */
 };
 
 /*
+** Code commented out for inclusion in bin2load
+*/
+
+/*
  * eXtended header definition for use with the new macros in a.out.h
 */
+
+/********************************************************************
 struct	xexec {
 	struct	exec	e;
 	struct	ovlhdr	o;
 	};
+********************************************************************/
 
 #define	A_MAGIC1	0407	/* normal */
 #define	A_MAGIC2	0410	/* read-only text */
