@@ -28,6 +28,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdlib.h>
 #include <memory.h>
 #include "bin2load.h"
+#include "bsd/a.out.h"
 
 /**
 ** Save a LDA block, generating the header and computing the checksum
@@ -95,7 +96,7 @@ int saveBlock(FILE *outFile, BYTE *binBlob, int const binSize, int const loadBas
 */
 int saveLdaFromAout(char const *fileName, BYTE *aoutBlob, int const aoutSize) {
     int rc=0;
-    struct pdp11_external_exec *execHdr;    // PDP-11 a.out header
+    struct exec *execHdr;                   // PDP-11 a.out header
     BYTE *textPtr = NULL;                   // Pointer to text section in aoutBlob
     BYTE *dataPtr = NULL;                   // Pointer to data section in aoutBlob
     BYTE *bssPtr = NULL;                    // Pointer to bss section (to be allocated)
@@ -107,14 +108,23 @@ int saveLdaFromAout(char const *fileName, BYTE *aoutBlob, int const aoutSize) {
     int bssLoadAddr = 0;                    // BSS load address (in the LDA file)
     FILE *outFile = NULL;
 
-    execHdr = (struct pdp11_external_exec *) aoutBlob;  // The header is at the beginning
+    execHdr = (struct exec *) aoutBlob;  // The header is at the beginning
 
-    textPtr = aoutBlob + sizeof(*execHdr) - 1;  // Start of the text section...
-    array2word(execHdr->e_text, &textSize);     // Length of the text section
+    if (N_BADMAG(*execHdr)) {
+      fprintf(stderr,"Unknown magic number in a.out file (%04o)\n", execHdr->a_magic);
+      return(-1);
+    }
+    if (execHdr->a_magic != 0407 && execHdr->a_magic != 0410) {
+      fprintf(stderr,"Unsupported a.out image type (%04o). This program supports only normal and read-only text images.\n", execHdr->a_magic);
+      return(-1);
+    }
+
+    textPtr = aoutBlob + sizeof(*execHdr) ;  // Start of the text section...
+    array2word((BYTE *) &execHdr->a_text, &textSize);     // Length of the text section
     dataPtr = textPtr + textSize;               // Data: after the text
-    array2word(execHdr->e_data, &dataSize);     // Data size, from array to word...
-    array2word(execHdr->e_bss, &bssSize);       // Bss size, from array to word...
-    array2word(execHdr->e_entry, &entryPoint);  // Entrypoint, from array to word...
+    array2word((BYTE *) &execHdr->a_data, &dataSize);     // Data size, from array to word...
+    array2word((BYTE *) &execHdr->a_bss, &bssSize);       // Bss size, from array to word...
+    array2word((BYTE *) &execHdr->a_entry, &entryPoint);  // Entrypoint, from array to word...
 
     /*
     ** If we have a bss section we will pre-allocate it

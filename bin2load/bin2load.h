@@ -41,23 +41,6 @@ struct BLOCK_HEADER_S {
     BYTE    origin[2];
 };
 
-/*
-** Copied from BFD (a.out-pdp11 backend implementation)
-*/
-struct pdp11_external_exec
-{
-  BYTE e_info[2];           /* Magic number.  */
-  BYTE e_text[2];           /* Length of text section in bytes.  */
-  BYTE e_data[2];           /* Length of data section in bytes.  */
-  BYTE e_bss[2];            /* Length of bss area in bytes.  */
-  BYTE e_syms[2];           /* Length of symbol table in bytes.  */
-  BYTE e_entry[2];          /* Start address.  */
-  BYTE e_unused[2];         /* Not used.  */
-  BYTE e_flag[2];           /* Relocation info stripped.  */
-  BYTE e_relocatable;       /* Ugly hack.  */
-};
-
-
 typedef struct BLOCK_HEADER_S BLOCK_HEADER;
 
 int loadBinary(char const *fileName, BYTE **binBlob, int *binSize);
