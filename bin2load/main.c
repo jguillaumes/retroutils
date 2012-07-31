@@ -33,12 +33,20 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 int verbose=0;      // Global variable to enable verbose output
 
+
 /*
 ** Syntax help
 */
 void syntax(char const *msg) {
     fprintf(stderr,"%s\n",msg);
-    fprintf(stderr,"Usage: bin2load [-a] -f inputFile -o outputFile [-b load address (octal)] \n");
+    fprintf(stderr,"Usage: bin2load [-a] -f inputFile -o outputFile [-b load address (octal)] [-s start address (octal)] [-p bss_padding_char ] [-v] [-V] [-h]\n");
+    fprintf(stderr,"        -a: the input file is in a.out format (defaults to binary)\n");
+    fprintf(stderr,"        -b: Load address. Not admitted if the format is a.out. Defaults to 01000 octal\n");
+    fprintf(stderr,"        -s: Start address. Defaults to the -b value or to the a.out own value\n");
+    fprintf(stderr,"        -p: Pad value for the BSS section. Defaults to zero\n");
+    fprintf(stderr,"        -v: Verbose output\n");
+    fprintf(stderr,"        -V: Displays the software version. Disregards the rest of options\n");
+    fprintf(stderr,"        -h: Displays this text. Disregards the rest of options\n");
     exit(128);
 }
 
@@ -49,13 +57,16 @@ int main(int argc, char **argv)
 {
     char msgBuffer[128];            // Work space for error messages
     char c;                         // Parsed option
-    char *octAddr       = NULL;     // Parameter: octal base address
+    char *octAddrLoad   = NULL;     // Parameter: octal base address
+    char *octAddrStart  = NULL;     // Parameter: octal base address
     char *inputBinFile  = NULL;     // Parameter: input file name
     char *outputLdaFile = NULL;     // Parameter: output file name
     BYTE *binBlob = NULL;           // Address of the buffer wirh loaded binary data
     int  binSize = 0;               // Size of the binary file (in bytes)
-    int  loadAddr = 01000;          // Base address, as an integer (Defaults to 1000 oct)
+    WORD  loadAddr = 01000;         // Base address, as an integer (Defaults to 1000 oct)
+    WORD  startAddr = 01000;        // Start address. 
     int  aout = 0;                  // Flag: input in a.out format
+    BYTE padChar = 0;               // BSS Padding character
 
     if (argc == 1) {
         syntax("Usage:");
@@ -66,7 +77,7 @@ int main(int argc, char **argv)
     ** Parse the command line using the getopt() POSIX call
     ** Note this is not the "extended" GNU version
     */
-    while((c=getopt(argc, argv, "avb:f:o:"))!=-1) {
+    while((c=getopt(argc, argv, "avVhb:f:o:s:p:"))!=-1) {
         switch(c) {
             case 'a':
                 aout = 1;
@@ -74,8 +85,18 @@ int main(int argc, char **argv)
             case 'v':
                 verbose = 1;
                 break;
+	    case 'V':
+	      fprintf(stderr,"bin2load version %s\n", BIN2LOAD_VERSION);
+	      exit(0);
+	      break;
+	    case 'h':
+	        syntax("Usage");
+	        break;
             case 'b':
-                octAddr = optarg;
+                octAddrLoad = optarg;
+                break;
+            case 's':
+                octAddrStart = optarg;
                 break;
             case 'f':
                 inputBinFile = optarg;
@@ -83,6 +104,9 @@ int main(int argc, char **argv)
             case 'o':
                 outputLdaFile = optarg;
                 break;
+	    case 'p':
+	        padChar = *optarg;
+		break;
             case '?':
                 sprintf(msgBuffer, "Unknown option: %c", c);
                 syntax(msgBuffer);
@@ -101,16 +125,35 @@ int main(int argc, char **argv)
     }
 
     /*
-    ** Check octal value for base address
+    ** Check for incompatible options
     */
-    if (octAddr != NULL) {
-        if (checkOctalString(octAddr) != 0) {
-            fprintf(stderr,"Wrong octal value (%s)\n", octAddr);
+    if (aout && (octAddrLoad != NULL || octAddrStart != NULL)) {
+      syntax("Base or/and start value are not admitted for a.out input files");
+    }
+
+    /*
+    ** Check octal value for base address and start address
+    */
+    if (octAddrLoad != NULL) {
+        if (checkOctalString(octAddrLoad) != 0) {
+            fprintf(stderr,"Wrong octal value (%s)\n", octAddrLoad);
             return(8);
         } else {
-            loadAddr = octalValue(octAddr);
+            loadAddr = octalValue(octAddrLoad);
+	    startAddr = loadAddr;    // Start address defaults to load Address
             if (verbose) {
                 printf("Load address is %08o (0x%04X)\n", loadAddr, loadAddr);
+            }
+        }
+    }
+    if (octAddrStart != NULL) {
+        if (checkOctalString(octAddrStart) != 0) {
+            fprintf(stderr,"Wrong octal value (%s)\n", octAddrStart);
+            return(8);
+        } else {
+            startAddr = octalValue(octAddrStart);
+            if (verbose) {
+                printf("Start address is %08o (0x%04X)\n", startAddr, startAddr);
             }
         }
     }
@@ -126,12 +169,12 @@ int main(int argc, char **argv)
     }
 
     if (!aout) {
-        if (saveLdaFromBin(outputLdaFile, binBlob, binSize, loadAddr) < 0) {
+      if (saveLdaFromBin(outputLdaFile, binBlob, binSize, loadAddr, startAddr) < 0) {
             fprintf(stderr, "Error saving load file.\n");
             exit(16);
         }
     } else {
-        if (saveLdaFromAout(outputLdaFile, binBlob, binSize) < 0) {
+      if (saveLdaFromAout(outputLdaFile, binBlob, binSize, padChar) < 0) {
             fprintf(stderr, "Error saving load file.\n");
             exit(16);
         }

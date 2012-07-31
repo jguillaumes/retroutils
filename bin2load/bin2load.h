@@ -28,7 +28,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define BIN2LOAD_H_INCLUDED
 
 #define SECT_ALIGN 0100
-
+#define BIN2LOAD_VERSION "1.00"
 
 typedef unsigned char   BYTE;
 typedef unsigned short  WORD;
@@ -44,8 +44,8 @@ struct BLOCK_HEADER_S {
 typedef struct BLOCK_HEADER_S BLOCK_HEADER;
 
 int loadBinary(char const *fileName, BYTE **binBlob, int *binSize);
-int saveLdaFromBin(char const *fileName, BYTE *binBlob, int const binSize, int const loadBase);
-int saveLdaFromAout(char const *fileName, BYTE *binBlob, int const binSize);
+int saveLdaFromBin(char const *fileName, BYTE *binBlob, WORD const binSize, WORD const loadBase, WORD const startAddr);
+int saveLdaFromAout(char const *fileName, BYTE *binBlob, WORD const binSize, BYTE padChar);
 
 
 void initConversions();

@@ -30,10 +30,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "bin2load.h"
 #include "bsd/a.out.h"
 
+extern int verbose;
+
 /**
 ** Save a LDA block, generating the header and computing the checksum
 **/
-int saveBlock(FILE *outFile, BYTE *binBlob, int const binSize, int const loadBase) {
+int saveBlock(FILE *outFile, BYTE *binBlob, WORD const binSize, WORD const loadBase) {
     BLOCK_HEADER bh;
     WORD lb = 0;            // Load address
     WORD sz = 0;            // Block size
@@ -94,12 +96,12 @@ int saveBlock(FILE *outFile, BYTE *binBlob, int const binSize, int const loadBas
 /*
 * Create the LDA from an a.out (PDP11 style) file.
 */
-int saveLdaFromAout(char const *fileName, BYTE *aoutBlob, int const aoutSize) {
+int saveLdaFromAout(char const *fileName, BYTE *aoutBlob, WORD const aoutSize, BYTE padChar) {
     int rc=0;
     struct exec *execHdr;                   // PDP-11 a.out header
     BYTE *textPtr = NULL;                   // Pointer to text section in aoutBlob
     BYTE *dataPtr = NULL;                   // Pointer to data section in aoutBlob
-    BYTE *bssPtr = NULL;                    // Pointer to bss section (to be allocated)
+    BYTE *bssPtr = NULL;                    // Ponter to bss section (to be allocated)
     WORD textSize = 0;                      // Text section size
     WORD dataSize = 0;                      // Data section size
     WORD bssSize = 0;                       // Bss section size
@@ -118,13 +120,20 @@ int saveLdaFromAout(char const *fileName, BYTE *aoutBlob, int const aoutSize) {
       fprintf(stderr,"Unsupported a.out image type (%04o). This program supports only normal and read-only text images.\n", execHdr->a_magic);
       return(-1);
     }
-
     textPtr = aoutBlob + sizeof(*execHdr) ;  // Start of the text section...
     array2word((BYTE *) &execHdr->a_text, &textSize);     // Length of the text section
     dataPtr = textPtr + textSize;               // Data: after the text
     array2word((BYTE *) &execHdr->a_data, &dataSize);     // Data size, from array to word...
     array2word((BYTE *) &execHdr->a_bss, &bssSize);       // Bss size, from array to word...
     array2word((BYTE *) &execHdr->a_entry, &entryPoint);  // Entrypoint, from array to word...
+
+    if (verbose) {
+      fprintf(stderr, "Size of .text= 0x%04X (%06o, %5u)\n", textSize, textSize, textSize);
+      fprintf(stderr, "Size of .data= 0x%04X (%06o, %5u)\n", dataSize, dataSize, dataSize);
+      fprintf(stderr, "Size of .bss = 0x%04X (%06o, %5u)\n", bssSize, bssSize, bssSize);
+      fprintf(stderr, "Entry point adress= 0x%04X ((%06o, %05u)\n", entryPoint, entryPoint, entryPoint);
+    }
+
 
     /*
     ** If we have a bss section we will pre-allocate it
@@ -135,7 +144,7 @@ int saveLdaFromAout(char const *fileName, BYTE *aoutBlob, int const aoutSize) {
             fprintf(stderr,"Unable to allocate %d bytes of memory\n", bssSize);
             return(-1);
         } else {
-            memset(bssPtr, 'U', bssSize);   // U for Uninitialized, really needed?
+	  memset(bssPtr, padChar, bssSize);   // Fill up the BSS space
         }
     } else {
         bssPtr = NULL;
@@ -189,7 +198,7 @@ int saveLdaFromAout(char const *fileName, BYTE *aoutBlob, int const aoutSize) {
 /*
 ** Create an LDA file from a binary, unstructured blob
 */
-int saveLdaFromBin(char const *fileName, BYTE *binBlob, int const binSize, int const loadBase) {
+int saveLdaFromBin(char const *fileName, BYTE *binBlob, WORD const binSize, WORD const loadBase, WORD const startAddr) {
     FILE *outFile = NULL;
     outFile = fopen(fileName,"w");
     int rc = 0;
@@ -206,9 +215,14 @@ int saveLdaFromBin(char const *fileName, BYTE *binBlob, int const binSize, int c
     ** Perhaps in the next version?
     */
     rc = saveBlock(outFile, binBlob, binSize, loadBase);
-    if (rc == 0) rc = saveBlock(outFile, NULL, 0, loadBase);
+    if (rc == 0) rc = saveBlock(outFile, NULL, 0, startAddr);
     fclose(outFile);
     return(rc);
+
+    if (verbose) {
+      fprintf(stderr, "Size of block= 0x%04X (%06o, %5u)\n", binSize, binSize, binSize);
+      fprintf(stderr, "Entry point adress= 0x%04X ((%06o, %05u)\n", startAddr, startAddr, startAddr);
+    }
 }
 
 
