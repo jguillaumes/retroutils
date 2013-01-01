@@ -1,0 +1,215 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		5FD21B821692F16100F65E56 /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = 5FD21B811692F16100F65E56 /* main.c */; };
+		5FD21B841692F16100F65E56 /* BlinkenServer.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = 5FD21B831692F16100F65E56 /* BlinkenServer.1 */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		5FD21B7B1692F16100F65E56 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+				5FD21B841692F16100F65E56 /* BlinkenServer.1 in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		5FD21B7D1692F16100F65E56 /* BlinkenServer */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = BlinkenServer; sourceTree = BUILT_PRODUCTS_DIR; };
+		5FD21B811692F16100F65E56 /* main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
+		5FD21B831692F16100F65E56 /* BlinkenServer.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = BlinkenServer.1; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		5FD21B7A1692F16100F65E56 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		5FD21B721692F16000F65E56 = {
+			isa = PBXGroup;
+			children = (
+				5FD21B801692F16100F65E56 /* BlinkenServer */,
+				5FD21B7E1692F16100F65E56 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		5FD21B7E1692F16100F65E56 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				5FD21B7D1692F16100F65E56 /* BlinkenServer */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		5FD21B801692F16100F65E56 /* BlinkenServer */ = {
+			isa = PBXGroup;
+			children = (
+				5FD21B811692F16100F65E56 /* main.c */,
+				5FD21B831692F16100F65E56 /* BlinkenServer.1 */,
+			);
+			path = BlinkenServer;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		5FD21B7C1692F16100F65E56 /* BlinkenServer */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 5FD21B871692F16100F65E56 /* Build configuration list for PBXNativeTarget "BlinkenServer" */;
+			buildPhases = (
+				5FD21B791692F16100F65E56 /* Sources */,
+				5FD21B7A1692F16100F65E56 /* Frameworks */,
+				5FD21B7B1692F16100F65E56 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = BlinkenServer;
+			productName = BlinkenServer;
+			productReference = 5FD21B7D1692F16100F65E56 /* BlinkenServer */;
+			productType = "com.apple.product-type.tool";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		5FD21B741692F16100F65E56 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0450;
+				ORGANIZATIONNAME = "Jordi Guillaumes Pons";
+			};
+			buildConfigurationList = 5FD21B771692F16100F65E56 /* Build configuration list for PBXProject "BlinkenServer" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = 5FD21B721692F16000F65E56;
+			productRefGroup = 5FD21B7E1692F16100F65E56 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				5FD21B7C1692F16100F65E56 /* BlinkenServer */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		5FD21B791692F16100F65E56 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5FD21B821692F16100F65E56 /* main.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		5FD21B851692F16100F65E56 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.8;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		5FD21B861692F16100F65E56 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.8;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		5FD21B881692F16100F65E56 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		5FD21B891692F16100F65E56 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		5FD21B771692F16100F65E56 /* Build configuration list for PBXProject "BlinkenServer" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5FD21B851692F16100F65E56 /* Debug */,
+				5FD21B861692F16100F65E56 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		5FD21B871692F16100F65E56 /* Build configuration list for PBXNativeTarget "BlinkenServer" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5FD21B881692F16100F65E56 /* Debug */,
+				5FD21B891692F16100F65E56 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 5FD21B741692F16100F65E56 /* Project object */;
+}
