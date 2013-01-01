@@ -63,8 +63,8 @@ int main(int argc, const char * argv[])
         exit(8);
     }
     
-    printf("Established...\n");
-
+    syslog(LOG_NOTICE, "Server starting");
+    
     sigact.sa_handler = int_handler;
     sigemptyset(&sigact.sa_mask);
     sigaction(SIGINT, &sigact, NULL);
