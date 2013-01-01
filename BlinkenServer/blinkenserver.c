@@ -52,7 +52,7 @@ int startup(WORD numPort, int timeoutmilis) {
             timeout.tv_usec = (timeoutmilis % 1000) * 1000;
             if (setsockopt(udpsock, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) != -1) {
                 address.sin_family = AF_INET;
-                address.sin_port = numPort;
+                address.sin_port = htons(numPort);
                 address.sin_addr.s_addr = INADDR_ANY;
 #ifdef OSX
                 address.sin_len = sizeof(address);

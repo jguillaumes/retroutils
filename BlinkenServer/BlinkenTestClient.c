@@ -16,7 +16,7 @@ int main(int argc, char **argv) {
     PBLINKENSTATUS pb=NULL;
     char *hostname = argv[1];
     WORD port = atoi(argv[2]);
-    WORD val = atoi(argv[3]);
+    int delay = atoi(argv[3]);
     int i=0;
     int resync=1;
     
@@ -25,7 +25,8 @@ int main(int argc, char **argv) {
         for(i=0;i<65536;i++) {
             blk_sendword(pb, (WORD) i, resync);
             resync=0;
-            usleep(500000);
+            usleep(delay);
         }
+        blk_close(pb);
     }
 }

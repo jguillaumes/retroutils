@@ -52,7 +52,7 @@ PBLINKENSTATUS blk_setup(char *hostname, WORD portNumber) {
     bkstat->sequence = 0;
     bkstat->socket = udpsock;
     bkstat->serverAddress.sin_family = AF_INET;
-    bkstat->serverAddress.sin_port = portNumber;
+    bkstat->serverAddress.sin_port = htons(portNumber);
     bkstat->serverAddress.sin_addr.s_addr = *((in_addr_t *)serverHost->h_addr_list[0]);
 #ifdef OSX
     bkstat->serverAddress.sin_len
