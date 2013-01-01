@@ -62,6 +62,7 @@ PBLINKENSTATUS blk_setup(char *hostname, WORD portNumber) {
 
 int blk_sendbyte(PBLINKENSTATUS pblk, BYTE b, int resync) {
     PAYLOAD payload;
+    memset(&payload, 0, sizeof(PAYLOAD));
     
     payload.sequence = ++(pblk->sequence);
     payload.numbits = 8;
@@ -72,6 +73,7 @@ int blk_sendbyte(PBLINKENSTATUS pblk, BYTE b, int resync) {
 
 int blk_sendword(PBLINKENSTATUS pblk, WORD w, int resync) {
     PAYLOAD payload;
+    memset(&payload, 0, sizeof(PAYLOAD));
     
     payload.sequence = ++(pblk->sequence);
     payload.numbits = 16;
