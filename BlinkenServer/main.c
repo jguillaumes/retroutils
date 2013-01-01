@@ -51,7 +51,7 @@ int main(int argc, const char * argv[])
     PAYLOAD payload;
     int socket = 0;
     struct sigaction sigact;
-    
+    int nmiss = 0;
     
     memset(&payload, 0, sizeof(payload));
     memset(&state, 0, sizeof(state));
@@ -76,9 +76,13 @@ int main(int argc, const char * argv[])
         if (getPacket(socket, &payload, &state) == 0) {
             if ((payload.sequence > state.lastSequence) || (payload.flags & FLG_RESYNC)) {
                 setBlinken(payload.numbits, payload.data);
+                nmiss = payload.sequence - state.lastSequence;
                 state.lastSequence = payload.sequence;
                 if (payload.flags & FLG_RESYNC) {
                     state.resyncs++;
+                }
+                if (nmiss > 1) {
+                    syslog(LOG_WARNING, "%d packets missing. Continuing.", nmiss-1);
                 }
             } else {
                 syslog(LOG_WARNING, "Packet out of sequence, last processed: %u, got %u. Packet dropped.", state.lastSequence,payload.sequence);

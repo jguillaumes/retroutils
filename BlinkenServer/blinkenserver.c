@@ -100,7 +100,9 @@ int getPacket(int socket, PPAYLOAD payload, PMYSTATE state) {
         state->received++;
         if (inaddr.sin_addr.s_addr == state->partner.sin_addr.s_addr) {
             dotip(inaddr.sin_addr.s_addr, ipaddress, sizeof(ipaddress));
+#ifdef DEBUG
             syslog(LOG_DEBUG, "Got packet from %s", ipaddress);
+#endif
             return 0;
         } else {
             if (state->flags && FLG_BOUND) {

@@ -14,6 +14,11 @@
 			<key>orderHint</key>
 			<integer>1</integer>
 		</dict>
+		<key>blinken.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>2</integer>
+		</dict>
 	</dict>
 	<key>SuppressBuildableAutocreation</key>
 	<dict>
@@ -23,6 +28,16 @@
 			<true/>
 		</dict>
 		<key>5FD21B9F16935C1B00F65E56</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>5FD21BB2169385BA00F65E56</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>5FD21BBD16938BBE00F65E56</key>
 		<dict>
 			<key>primary</key>
 			<true/>
