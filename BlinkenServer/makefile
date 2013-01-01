@@ -13,3 +13,4 @@ BlinkenServer :	auxfunc.c  blinkenserver.c  blinkenserver.h logger.c  main.c
 
 BlinkenClient :	blinkenclient.c blinkenserver.h auxfunc.c
 	$(CC) $(CCFLAGS) -o BlinkenClient blinkenclient.c auxfunc.c
+
