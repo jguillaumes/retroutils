@@ -87,9 +87,11 @@ int getPacket(int socket, PPAYLOAD payload, PMYSTATE state) {
     siz = recvfrom(socket, payload, paySize, MSG_WAITALL, (struct sockaddr *) &inaddr, &addrSize);
     if (siz == -1) {
         if (errno == EAGAIN) {
-            syslog(LOG_NOTICE, "Timeout waiting for packets, unbinding");
-            state->flags &= ~FLG_BOUND;
-            memset(&(state->partner), 0, sizeof(struct sockaddr));
+            if (state->flags & FLG_BOUND) {
+                syslog(LOG_NOTICE, "Timeout waiting for packets, unbinding");
+                state->flags &= ~FLG_BOUND;
+                memset(&(state->partner), 0, sizeof(struct sockaddr));
+            }
         } else {
             syslog(LOG_ERR,"Error reading packet (%m)");
         }
