@@ -66,7 +66,7 @@ int blk_sendbyte(PBLINKENSTATUS pblk, BYTE b, int resync) {
     
     packet.sequence = ++(pblk->sequence);
     packet.payload.numBytes = 1;
-    packetflags = resync ? FLG_RESYNC : 0;
+    packet.flags = resync ? FLG_RESYNC : 0;
     packet.payload.data[0] = b;
     return (int) sendto(pblk->socket, &packet, sizeof(packet), 0, (struct sockaddr *) &(pblk->serverAddress), sizeof(struct sockaddr));
 }
@@ -79,14 +79,29 @@ int blk_sendword(PBLINKENSTATUS pblk, WORD w, int resync) {
     nword = htons(w);
 
     packet.sequence = ++(pblk->sequence);
-    packet.payload..numBytes= 2;
+    packet.payload.numBytes= 2;
     packet.flags = resync ? FLG_RESYNC : 0;
-    packet.payload.data[0] = (nw >> 8) & 0xFF;
-    packet.payload.data[1] = nw & 0xFF;
+    packet.payload.data[0] = (nword >> 8) & 0xFF;
+    packet.payload.data[1] = nword & 0xFF;
     return (int) sendto(pblk->socket, &packet, sizeof(packet), 0, (struct sockaddr *) &(pblk->serverAddress), sizeof(struct sockaddr));
 }
+
+int blk_senderror(PBLINKENSTATUS pblk, int resync) {
+    BLKPACKET packet;
+    memset(&packet, 0, sizeof(BLKPACKET));
+    
+    packet.sequence = ++(pblk->sequence);
+    packet.payload.numBytes= 2;
+    packet.flags = resync ? FLG_RESYNC : 0;
+    packet.payload.bflags = BLF_ERROR;
+    packet.payload.data[0] = 0;
+    packet.payload.data[1] = 0;
+    return (int) sendto(pblk->socket, &packet, sizeof(packet), 0, (struct sockaddr *) &(pblk->serverAddress), sizeof(struct sockaddr));
+}
+
 
 void blk_close(PBLINKENSTATUS pblk) {
     close(pblk->socket);
     free(pblk);
 }
+
