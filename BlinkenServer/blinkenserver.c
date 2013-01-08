@@ -24,12 +24,29 @@
 #include "wiringShift.h"
 #endif
 
+static unsigned char oldBits[32];
+
+
+int parity(unsigned short n) {
+  unsigned short w;
+  int i=0, ones=0;
+
+  w = n;
+  for (i=0; i<16; i++) {
+    ones += w % 2;
+    w /= 2;
+  }
+  return ones % 2;
+}
+
 
 int startup(WORD numPort, int timeoutmilis) {
     int udpsock = 0;
     struct protoent *udpproto;
     struct timeval timeout;
     struct sockaddr_in address;
+
+    memset(oldBits, 0, sizeof(oldBits));
     
 #ifdef HAS_BLINKEN
     if (wiringPiSetupSys() < 0) {
@@ -77,14 +94,14 @@ int startup(WORD numPort, int timeoutmilis) {
     return -1;
 }
 
-int getPacket(int socket, PPAYLOAD payload, PMYSTATE state) {
+int getPacket(int socket, PBLKPACKET packet, PMYSTATE state) {
     size_t siz=0;
     struct sockaddr_in inaddr;
     socklen_t  addrSize = sizeof(inaddr);
-    int paySize = sizeof(PAYLOAD);
+    int packSize = sizeof(BLKPACKET);
     char ipaddress[16];
     
-    siz = recvfrom(socket, payload, paySize, MSG_WAITALL, (struct sockaddr *) &inaddr, &addrSize);
+    siz = recvfrom(socket, packet, packSize, MSG_WAITALL, (struct sockaddr *) &inaddr, &addrSize);
     if (siz == -1) {
         if (errno == EAGAIN) {
             if (state->flags & FLG_BOUND) {
@@ -121,53 +138,50 @@ int getPacket(int socket, PPAYLOAD payload, PMYSTATE state) {
     }
 }
 
-void setBlinken(WORD bits, BYTE *bytes) {
-    int i=0;
-    WORD nbits = (bits <= 16 && bits > 0 ? bits : 16);
-    int nbytes =    nbits / 8;
-    int restbytes = nbits % 8;
-    
+void setBlinken(PPAYLOAD payload) {
+  int i=0;
+  int indicators = 0;
+  int par = 0;
 #ifdef HAS_BLINKEN
-    int lastbyte = 0;
-    int b=0;
-    
-    digitalWrite(LATCH,LOW);
-    for(i=0; i<nbytes; i++) {
-        shiftOut(DATA, CLOCK, LSBFIRST, bytes[i]);
+  
+  digitalWrite(LATCH,LOW);
+  if (payload->bflags & BLF_TEST) {
+    for (i=0; i<payload->numBytes; i++) {
+      shiftOut(DATA,CLOCK,MSBFIRST, 0xFF);
     }
-    if (restbytes > 0) {
-        lastbyte = bytes[nbytes];
-        for(i=0; i<restbytes; i++) {
-            b = (lastbyte & 0x80) >> 7;
-            lastbyte <<= 1;
-            digitalWrite(DATA, b);
-            digitalWrite(CLOCK, HIGH);
-            digitalWrite(CLOCK, LOW);
-            delayMicroseconds(1);
-        }
+  } else {
+    if (payload->bflags & BLF_ERROR) {
+      indicators = 0x02;
+    } else {
+      for (i=0; i< payload->numBytes; i++) {
+	oldBits[i] = payload->data[i];
+	par += parity(payload->data[i]);
+      }
+      if (payload->bflags & BLF_NOPARITY) {
+	indicators = 0;
+      } else {
+	indicators = (par % 2) & 0x0001;
+      }
+      shiftOut(DATA,CLOCK,MSBFIRST,indicators);
+      for (i=0; i<payload->numBytes; i++) {
+	shiftOut(DATA,CLOCK,MSBFIRST,oldBits[i]);
+      }
     }
     digitalWrite(LATCH,HIGH);
-    
+  }
 #else
-    char binbuf[9];
-    char linelog[256];
-    int endstr = 0;
-    
-    memset(linelog, 0 , sizeof(linelog));
-    sprintf(linelog, "Got lights packet for %d lights ", bits);
-    for(i=0;i<nbytes;i++) {
-        dobinary(bytes[i], binbuf, sizeof(binbuf));
-        strcat(linelog, binbuf);
-    }
-    if (restbytes>0) {
-        endstr = (int) strlen(linelog);
-        dobinary(bytes[nbytes], binbuf, sizeof(binbuf));
-        for (i=0; i<restbytes; i++) {
-            linelog[endstr+i] = binbuf[i];
-        }
-    }
-    syslog(LOG_DEBUG, "%s", linelog);
-    printf("%s\n", linelog);
+  char binbuf[9];
+  char linelog[256];
+  int endstr = 0;
+  
+  memset(linelog, 0 , sizeof(linelog));
+  sprintf(linelog, "Got lights packet for %d lights ", payload->numBytes * 8);
+  for(i=0;i<payload->numBytes;i++) {
+    dobinary(payload->data[i], binbuf, sizeof(binbuf));
+    strcat(linelog, binbuf);
+  }
+  syslog(LOG_DEBUG, "%s", linelog);
+  printf("%s\n", linelog);
 #endif
 }
 

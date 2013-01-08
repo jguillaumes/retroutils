@@ -25,19 +25,30 @@ typedef unsigned int LONGWORD;
 #define FLG_RESYNC  0x01
 #define FLG_DETACH  0x02
 
+#define BLF_NOPARITY 0x0001
+#define BLF_ERROR    0x0002
+#define BLF_TEST     0x0004
+
 #define DEF_PORT    11696
 
-
 struct s_payload {
-    BYTE        function;
-    BYTE        flags;
-    LONGWORD    sequence;
-    WORD        numbits;
-    BYTE        data[32];
+  WORD          bflags;
+  WORD          numBytes;
+  BYTE          data[32];
 };
 
 typedef struct s_payload PAYLOAD;
 typedef struct s_payload *PPAYLOAD;
+
+struct s_blkpacket {
+  BYTE        function;
+  BYTE        flags;
+  LONGWORD    sequence;
+  struct s_payload payload;
+};
+
+typedef struct s_blkpacket BLKPACKET;
+typedef struct s_blkpacket *PBLKPACKET;
 
 #define FLG_BOUND       0x01
 #define FLG_HASDROPS    0x02
@@ -57,8 +68,8 @@ typedef struct s_mystate *PMYSTATE;
 
 int startup(WORD numPort, int timeoutMilis);
 void initLogger();
-int getPacket(int socket, PPAYLOAD payload, PMYSTATE state);
-void setBlinken(WORD bits, BYTE *bytes);
+int getPacket(int socket, PBLKPACKET packet, PMYSTATE state);
+void setBlinken(PPAYLOAD payload);
 int dotip(int address, char *buffer, int bufsiz);
 int dobinary(BYTE byte, char *buffer, int bufsiz);
 

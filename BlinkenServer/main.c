@@ -48,12 +48,12 @@ void hup_handler(int sig) {
 
 int main(int argc, const char * argv[])
 {
-    PAYLOAD payload;
+    BLKPACKET packet;
     int socket = 0;
     struct sigaction sigact;
     int nmiss = 0;
     
-    memset(&payload, 0, sizeof(payload));
+    memset(&packet, 0, sizeof(packet));
     memset(&state, 0, sizeof(state));
     
     initLogger();
@@ -73,19 +73,19 @@ int main(int argc, const char * argv[])
     sigaction(SIGHUP, &sigact, NULL);
     
     while(!endProcess) {
-        if (getPacket(socket, &payload, &state) == 0) {
-            if ((payload.sequence > state.lastSequence) || (payload.flags & FLG_RESYNC)) {
-                setBlinken(payload.numbits, payload.data);
-                nmiss = payload.sequence - state.lastSequence;
-                state.lastSequence = payload.sequence;
-                if (payload.flags & FLG_RESYNC) {
+        if (getPacket(socket, &packet, &state) == 0) {
+            if ((packet.sequence > state.lastSequence) || (packet.flags & FLG_RESYNC)) {
+                setBlinken(&packet.payload);
+                nmiss = packet.sequence - state.lastSequence;
+                state.lastSequence = packet.sequence;
+                if (packet.flags & FLG_RESYNC) {
                     state.resyncs++;
                 }
                 if (nmiss > 1) {
                     syslog(LOG_WARNING, "%d packets missing. Continuing.", nmiss-1);
                 }
             } else {
-                syslog(LOG_WARNING, "Packet out of sequence, last processed: %u, got %u. Packet dropped.", state.lastSequence,payload.sequence);
+                syslog(LOG_WARNING, "Packet out of sequence, last processed: %u, got %u. Packet dropped.", state.lastSequence,packet.sequence);
                 state.outOfSequence++;
             }
         }
