@@ -26,6 +26,8 @@ typedef unsigned int LONGWORD;
 
 #define DEF_PORT    11696
 
+#pragma pack(1)
+
 struct s_payload {
   WORD          bflags;
   WORD          numBytes;
@@ -45,7 +47,6 @@ struct s_blkpacket {
 typedef struct s_blkpacket BLKPACKET;
 typedef struct s_blkpacket *PBLKPACKET;
 
-
 struct s_blinkenstatus {
     struct      sockaddr_in serverAddress;
     int         socket;
@@ -55,6 +56,7 @@ struct s_blinkenstatus {
 typedef struct s_blinkenstatus BLINKENSTATUS;
 typedef struct s_blinkenstatus *PBLINKENSTATUS;
 
+#pragma pack()
 
 PBLINKENSTATUS blk_setup(char *hostname, WORD portNumber);
 int blk_sendbyte(PBLINKENSTATUS pblk, BYTE b, int resync);

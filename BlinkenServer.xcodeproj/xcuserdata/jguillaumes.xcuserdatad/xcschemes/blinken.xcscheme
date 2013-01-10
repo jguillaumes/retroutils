@@ -14,9 +14,9 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "5FD21B9F16935C1B00F65E56"
-               BuildableName = "BlinkenTestClient"
-               BlueprintName = "BlinkenTestClient"
+               BlueprintIdentifier = "5FD21BBD16938BBE00F65E56"
+               BuildableName = "libblinken.a"
+               BlueprintName = "blinken"
                ReferencedContainer = "container:BlinkenServer.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -29,15 +29,6 @@
       buildConfiguration = "Debug">
       <Testables>
       </Testables>
-      <MacroExpansion>
-         <BuildableReference
-            BuildableIdentifier = "primary"
-            BlueprintIdentifier = "5FD21B9F16935C1B00F65E56"
-            BuildableName = "BlinkenTestClient"
-            BlueprintName = "BlinkenTestClient"
-            ReferencedContainer = "container:BlinkenServer.xcodeproj">
-         </BuildableReference>
-      </MacroExpansion>
    </TestAction>
    <LaunchAction
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
@@ -48,29 +39,6 @@
       ignoresPersistentStateOnLaunch = "NO"
       debugDocumentVersioning = "YES"
       allowLocationSimulation = "YES">
-      <BuildableProductRunnable>
-         <BuildableReference
-            BuildableIdentifier = "primary"
-            BlueprintIdentifier = "5FD21B9F16935C1B00F65E56"
-            BuildableName = "BlinkenTestClient"
-            BlueprintName = "BlinkenTestClient"
-            ReferencedContainer = "container:BlinkenServer.xcodeproj">
-         </BuildableReference>
-      </BuildableProductRunnable>
-      <CommandLineArguments>
-         <CommandLineArgument
-            argument = "127.0.0.1"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "11696"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "250000"
-            isEnabled = "YES">
-         </CommandLineArgument>
-      </CommandLineArguments>
       <AdditionalOptions>
       </AdditionalOptions>
    </LaunchAction>
@@ -80,15 +48,6 @@
       useCustomWorkingDirectory = "NO"
       buildConfiguration = "Release"
       debugDocumentVersioning = "YES">
-      <BuildableProductRunnable>
-         <BuildableReference
-            BuildableIdentifier = "primary"
-            BlueprintIdentifier = "5FD21B9F16935C1B00F65E56"
-            BuildableName = "BlinkenTestClient"
-            BlueprintName = "BlinkenTestClient"
-            ReferencedContainer = "container:BlinkenServer.xcodeproj">
-         </BuildableReference>
-      </BuildableProductRunnable>
    </ProfileAction>
    <AnalyzeAction
       buildConfiguration = "Debug">

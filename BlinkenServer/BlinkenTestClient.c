@@ -22,7 +22,7 @@ int main(int argc, char **argv) {
     
     pb=blk_setup(hostname, port);
     if (pb!=NULL) {
-        for(i=0;i<65536;i++) {
+        for(i=65535;i>=0;i--) {
             blk_sendword(pb, (WORD) htons(i), resync);
             resync=0;
             usleep(delay);
