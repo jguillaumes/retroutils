@@ -21,18 +21,12 @@ import org.netbeans.lib.awtextra.AbsoluteConstraints;
 public class JBlinkenPanel extends javax.swing.JFrame {
 
     
-    public static final short BLF_NOPARITY = 0x01;
-    public static final short BLF_ERROR    = 0x02;
-    public static final short BLF_TEST     = 0x04;
-
-    private JBlinkenServer controller = null;
     
     /** Creates new form JBlinkenPanel */
-    public JBlinkenPanel(JBlinkenServer controller) {
+    public JBlinkenPanel() {
         int x = 100;
         int y = 50;
 
-        this.controller = controller;
         initComponents();
         
         iconRed     = new ImageIcon(getClass().getResource("/resources/Red.png"));
@@ -64,9 +58,15 @@ public class JBlinkenPanel extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
+        jPanel1 = new javax.swing.JPanel();
+        jPanel3 = new javax.swing.JPanel();
+        jLabel1 = new javax.swing.JLabel();
+        udpPortFTF = new javax.swing.JFormattedTextField();
+        jPanel2 = new javax.swing.JPanel();
+        startBT = new javax.swing.JButton();
+        stopBT = new javax.swing.JButton();
         jMenuBar1 = new javax.swing.JMenuBar();
         fileMenu = new javax.swing.JMenu();
-        listenMenuItem = new javax.swing.JCheckBoxMenuItem();
         exitMenuItem = new javax.swing.JMenuItem();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
@@ -74,11 +74,44 @@ public class JBlinkenPanel extends javax.swing.JFrame {
         setResizable(false);
         getContentPane().setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
-        fileMenu.setText("File");
+        jPanel1.setLayout(new java.awt.BorderLayout());
 
-        listenMenuItem.setSelected(true);
-        listenMenuItem.setText("Listen");
-        fileMenu.add(listenMenuItem);
+        jPanel3.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+
+        jLabel1.setText("UDP port");
+        jPanel3.add(jLabel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 0, -1, 30));
+
+        udpPortFTF.setFormatterFactory(new javax.swing.text.DefaultFormatterFactory(new javax.swing.text.NumberFormatter(new java.text.DecimalFormat("#####"))));
+        udpPortFTF.setText("11696");
+        udpPortFTF.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                udpPortFTFActionPerformed(evt);
+            }
+        });
+        jPanel3.add(udpPortFTF, new org.netbeans.lib.awtextra.AbsoluteConstraints(70, 0, 70, 30));
+
+        jPanel1.add(jPanel3, java.awt.BorderLayout.WEST);
+
+        jPanel2.setMinimumSize(new java.awt.Dimension(200, 200));
+
+        startBT.setText("Start");
+        startBT.setName("startBT"); // NOI18N
+        startBT.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                startBTActionPerformed(evt);
+            }
+        });
+        jPanel2.add(startBT);
+
+        stopBT.setText("Stop");
+        stopBT.setName("stopBT"); // NOI18N
+        jPanel2.add(stopBT);
+
+        jPanel1.add(jPanel2, java.awt.BorderLayout.CENTER);
+
+        getContentPane().add(jPanel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(40, 230, 370, 40));
+
+        fileMenu.setText("File");
 
         exitMenuItem.setText("Exit");
         exitMenuItem.addActionListener(new java.awt.event.ActionListener() {
@@ -96,53 +129,17 @@ public class JBlinkenPanel extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void exitMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_exitMenuItemActionPerformed
-        this.setVisible(false);
-        this.dispose();
-        controller.setToExit();
-    }//GEN-LAST:event_exitMenuItemActionPerformed
 
-    public void setError(boolean err) {
-        if (err) {
-            errorLabel.setIcon(iconRed);
-        } else {
-            errorLabel.setIcon(iconBlack);            
-        }
-    }
-        
-    public void setLights(int flags, int lights) {
-        int n=lights;
-        
-        if ((flags & BLF_ERROR) != 0) {
-            errorLabel.setIcon(iconRed);
-        } else {
-            if (parity(lights) == 1) {
-                parityLabel.setIcon(iconOrange);
-            } else {
-                parityLabel.setIcon(iconBlack);            
-            }
-            for (int i = 0; i < 16; i++) {
-                errorLabel.setIcon(iconBlack);
-                if (n % 2 != 0) {
-                    bitsLabel[i].setIcon(iconGreen);
-                } else {
-                    bitsLabel[i].setIcon(iconBlack);
-                }
-                n /= 2;
-            }
-        }
-    }
-    
-    private int parity(int number) {
-        int nones = 0;
-        int rem = number;
-        
-        while(rem > 0) {
-            nones += rem % 2;
-            rem /= 2;
-        }
-        
-        return nones % 2;
-    }
+        this.setVisible(false);         this.dispose();     }//GEN-LAST:event_exitMenuItemActionPerformed
+
+    private void startBTActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_startBTActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_startBTActionPerformed
+
+    private void udpPortFTFActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_udpPortFTFActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_udpPortFTFActionPerformed
+
         
     ImageIcon iconRed;
     ImageIcon iconGreen;   
@@ -155,7 +152,13 @@ public class JBlinkenPanel extends javax.swing.JFrame {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     javax.swing.JMenuItem exitMenuItem;
     javax.swing.JMenu fileMenu;
+    javax.swing.JLabel jLabel1;
     javax.swing.JMenuBar jMenuBar1;
-    javax.swing.JCheckBoxMenuItem listenMenuItem;
+    javax.swing.JPanel jPanel1;
+    javax.swing.JPanel jPanel2;
+    javax.swing.JPanel jPanel3;
+    javax.swing.JButton startBT;
+    javax.swing.JButton stopBT;
+    javax.swing.JFormattedTextField udpPortFTF;
     // End of variables declaration//GEN-END:variables
 }
