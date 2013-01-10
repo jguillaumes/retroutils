@@ -37,3 +37,6 @@ Icon?
 ehthumbs.db
 Thumbs.db
 
+/JBlinkenServer/nbproject/private/
+/JBlinkenServer/build/
+/JBlinkenServer/dist/
