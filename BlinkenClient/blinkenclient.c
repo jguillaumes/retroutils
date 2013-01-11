@@ -1,10 +1,30 @@
-//
-//  blinkenclientlib.c
-//  BlinkenServer
-//
-//  Created by Jordi Guillaumes Pons on 01/01/13.
-//  Copyright (c) 2013 Jordi Guillaumes Pons. All rights reserved.
-//
+/* blinkenclient.c: BlinkenLights for the PDP11
+ ------------------------------------------------------------------------------
+ Copyright (c) 2013, Jordi Guillaumes Pons
+ 
+ Permission is hereby granted, free of charge, to any person obtaining a
+ copy of this software and associated documentation files (the "Software"),
+ to deal in the Software without restriction, including without limitation
+ the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ and/or sell copies of the Software, and to permit persons to whom the
+ Software is furnished to do so, subject to the following conditions:
+ 
+ The above copyright notice and this permission notice shall be included in
+ all copies or substantial portions of the Software.
+ 
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+ THE AUTHOR BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ 
+ Except as contained in this notice, the name of the author shall not be
+ used in advertising or otherwise to promote the sale, use or other dealings
+ in this Software without prior written authorization from the author.
+ 
+ -----------------------------------------------------------------------------
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -65,7 +85,7 @@ int blk_sendbyte(PBLINKENSTATUS pblk, BYTE b, int resync) {
     memset(&packet, 0, sizeof(BLKPACKET));
     
     packet.sequence = htonl(++(pblk->sequence));
-    packet.payload.numBytes = htons(1);
+    packet.payload.numDataBytes = htons(1);
     packet.flags = resync ? FLG_RESYNC : 0;
     packet.payload.data[0] = b;
     return (int) sendto(pblk->socket, &packet, sizeof(packet), 0, (struct sockaddr *) &(pblk->serverAddress), sizeof(struct sockaddr));
@@ -79,7 +99,7 @@ int blk_sendword(PBLINKENSTATUS pblk, WORD w, int resync) {
     nword = htons(w);
 
     packet.sequence = htonl(++(pblk->sequence));
-    packet.payload.numBytes= htons(2);
+    packet.payload.numDataBytes= htons(2);
     packet.flags = resync ? FLG_RESYNC : 0;
     packet.payload.data[0] = (nword >> 8) & 0xFF;
     packet.payload.data[1] = nword & 0xFF;
@@ -91,7 +111,7 @@ int blk_senderror(PBLINKENSTATUS pblk, int resync) {
     memset(&packet, 0, sizeof(BLKPACKET));
     
     packet.sequence = htonl(++(pblk->sequence));
-    packet.payload.numBytes= htons(2);
+    packet.payload.numDataBytes= htons(2);
     packet.flags = resync ? FLG_RESYNC : 0;
     packet.payload.bflags = htons(BLF_ERROR);
     packet.payload.data[0] = 0;
