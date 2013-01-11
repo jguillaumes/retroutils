@@ -10,22 +10,32 @@
  */
 package name.guillaumes.jordi.jblinkenserver;
 
+import java.awt.Dimension;
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
-import org.netbeans.lib.awtextra.AbsoluteConstraints;
+import javax.swing.JPanel;
 
 /**
  *
  * @author jguillaumes
  */
 public class JBlinkenPanel extends javax.swing.JFrame {
-
+    private static final String hexdig="0123456789ABCDEF";
     
+    
+    private JLabel makeBitLabel(String text) {
+        JLabel lbl = new JLabel();
+        lbl.setText(text);
+        lbl.setPreferredSize(new Dimension(30,10));        
+        lbl.setMinimumSize(new Dimension(30,10));    
+        lbl.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        lbl.setFont(lbl.getFont().deriveFont(lbl.getFont().getSize()-3f));
+
+        return lbl;
+    }
     
     /** Creates new form JBlinkenPanel */
     public JBlinkenPanel() {
-        int x = 100;
-        int y = 50;
 
         initComponents();
         
@@ -33,7 +43,32 @@ public class JBlinkenPanel extends javax.swing.JFrame {
         iconGreen   = new ImageIcon(getClass().getResource("/resources/Green.png"));
         iconOrange  = new ImageIcon(getClass().getResource("/resources/Orange.png"));
         iconBlack   = new ImageIcon(getClass().getResource("/resources/Black.png"));
+
+        // ((FlowLayout) ledPanel.getLayout()).setHgap(5);
         
+        errorLabel.setIcon(iconBlack);
+        parityLabel.setIcon(iconBlack);
+        
+        ledPanel.add(errorLabel);
+        labelPanel.add(makeBitLabel("E"));
+        ledPanel.add(parityLabel);
+        labelPanel.add(makeBitLabel("P"));
+        
+        JPanel sepPanel = new JPanel();
+        sepPanel.setMinimumSize(new Dimension(15,40));
+        JPanel sepPanell = new JPanel();
+        sepPanell.setMinimumSize(new Dimension(15,40));
+        ledPanel.add(sepPanel);
+        labelPanel.add(sepPanell);
+        
+        for(int i=15; i>=0; i--) {
+            bitsLabel[i] = new JLabel();
+            bitsLabel[i].setIcon(iconBlack);
+            ledPanel.add(bitsLabel[i]);
+            labelPanel.add(makeBitLabel(hexdig.substring(i, i+1)));
+        }
+        
+        /*
         for (int i=15; i>=0; i--) {
             bitsLabel[i] = new JLabel();
             bitsLabel[i].setIcon(iconBlack);
@@ -46,7 +81,7 @@ public class JBlinkenPanel extends javax.swing.JFrame {
         
         getContentPane().add(errorLabel, new AbsoluteConstraints(20,y));
         getContentPane().add(parityLabel, new AbsoluteConstraints(55,y));
-
+        */
     }
 
     /** This method is called from within the constructor to
@@ -57,7 +92,11 @@ public class JBlinkenPanel extends javax.swing.JFrame {
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
+        java.awt.GridBagConstraints gridBagConstraints;
 
+        jPanel4 = new javax.swing.JPanel();
+        ledPanel = new javax.swing.JPanel();
+        labelPanel = new javax.swing.JPanel();
         jPanel1 = new javax.swing.JPanel();
         jPanel3 = new javax.swing.JPanel();
         jLabel1 = new javax.swing.JLabel();
@@ -65,6 +104,18 @@ public class JBlinkenPanel extends javax.swing.JFrame {
         jPanel2 = new javax.swing.JPanel();
         startBT = new javax.swing.JButton();
         stopBT = new javax.swing.JButton();
+        statusPanel = new javax.swing.JPanel();
+        jLabel2 = new javax.swing.JLabel();
+        statusLabel = new javax.swing.JLabel();
+        jLabel3 = new javax.swing.JLabel();
+        jLabel4 = new javax.swing.JLabel();
+        jLabel5 = new javax.swing.JLabel();
+        jLabel6 = new javax.swing.JLabel();
+        recvdLabel = new javax.swing.JLabel();
+        fillPanel = new javax.swing.JPanel();
+        oofLabel = new javax.swing.JLabel();
+        nboundLabel = new javax.swing.JLabel();
+        tmoutLabel = new javax.swing.JLabel();
         jMenuBar1 = new javax.swing.JMenuBar();
         fileMenu = new javax.swing.JMenu();
         exitMenuItem = new javax.swing.JMenuItem();
@@ -74,21 +125,24 @@ public class JBlinkenPanel extends javax.swing.JFrame {
         setResizable(false);
         getContentPane().setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
+        ledPanel.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        ledPanel.setMinimumSize(new java.awt.Dimension(660, 40));
+        ledPanel.setPreferredSize(new java.awt.Dimension(660, 40));
+        getContentPane().add(ledPanel, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 10, -1, -1));
+
+        labelPanel.setMinimumSize(new java.awt.Dimension(660, 15));
+        labelPanel.setPreferredSize(new java.awt.Dimension(660, 15));
+        getContentPane().add(labelPanel, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 50, 660, -1));
+
         jPanel1.setLayout(new java.awt.BorderLayout());
 
-        jPanel3.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
-
         jLabel1.setText("UDP port");
-        jPanel3.add(jLabel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 0, -1, 30));
+        jLabel1.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        jPanel3.add(jLabel1);
 
         udpPortFTF.setFormatterFactory(new javax.swing.text.DefaultFormatterFactory(new javax.swing.text.NumberFormatter(new java.text.DecimalFormat("#####"))));
         udpPortFTF.setText("11696");
-        udpPortFTF.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                udpPortFTFActionPerformed(evt);
-            }
-        });
-        jPanel3.add(udpPortFTF, new org.netbeans.lib.awtextra.AbsoluteConstraints(70, 0, 70, 30));
+        jPanel3.add(udpPortFTF);
 
         jPanel1.add(jPanel3, java.awt.BorderLayout.WEST);
 
@@ -96,11 +150,6 @@ public class JBlinkenPanel extends javax.swing.JFrame {
 
         startBT.setText("Start");
         startBT.setName("startBT"); // NOI18N
-        startBT.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                startBTActionPerformed(evt);
-            }
-        });
         jPanel2.add(startBT);
 
         stopBT.setText("Stop");
@@ -110,6 +159,100 @@ public class JBlinkenPanel extends javax.swing.JFrame {
         jPanel1.add(jPanel2, java.awt.BorderLayout.CENTER);
 
         getContentPane().add(jPanel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(40, 230, 370, 40));
+
+        statusPanel.setLayout(new java.awt.GridBagLayout());
+
+        jLabel2.setText("Status:");
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 0;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.EAST;
+        gridBagConstraints.weightx = 20.0;
+        gridBagConstraints.insets = new java.awt.Insets(0, 0, 0, 5);
+        statusPanel.add(jLabel2, gridBagConstraints);
+
+        statusLabel.setText("Idle");
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 0;
+        gridBagConstraints.gridwidth = 2;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.weightx = 80.0;
+        statusPanel.add(statusLabel, gridBagConstraints);
+
+        jLabel3.setText("Received frames:");
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 1;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.EAST;
+        gridBagConstraints.insets = new java.awt.Insets(0, 0, 0, 5);
+        statusPanel.add(jLabel3, gridBagConstraints);
+
+        jLabel4.setText("Out-of-order frames:");
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 2;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.EAST;
+        gridBagConstraints.insets = new java.awt.Insets(0, 0, 0, 5);
+        statusPanel.add(jLabel4, gridBagConstraints);
+
+        jLabel5.setText("Non-bound source frames:");
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 3;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.EAST;
+        gridBagConstraints.insets = new java.awt.Insets(0, 0, 0, 5);
+        statusPanel.add(jLabel5, gridBagConstraints);
+
+        jLabel6.setText("Timeouts:");
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.EAST;
+        gridBagConstraints.insets = new java.awt.Insets(0, 0, 0, 5);
+        statusPanel.add(jLabel6, gridBagConstraints);
+
+        recvdLabel.setText("0");
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 1;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.EAST;
+        gridBagConstraints.weightx = 30.0;
+        statusPanel.add(recvdLabel, gridBagConstraints);
+
+        fillPanel.setMinimumSize(new java.awt.Dimension(200, 10));
+        fillPanel.setPreferredSize(new java.awt.Dimension(10, 200));
+        fillPanel.setRequestFocusEnabled(false);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 2;
+        gridBagConstraints.gridy = 1;
+        gridBagConstraints.weightx = 50.0;
+        statusPanel.add(fillPanel, gridBagConstraints);
+
+        oofLabel.setText("0");
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 2;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.EAST;
+        gridBagConstraints.weightx = 30.0;
+        statusPanel.add(oofLabel, gridBagConstraints);
+
+        nboundLabel.setText("0");
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 3;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.EAST;
+        gridBagConstraints.weightx = 30.0;
+        statusPanel.add(nboundLabel, gridBagConstraints);
+
+        tmoutLabel.setText("0");
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 4;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.EAST;
+        gridBagConstraints.weightx = 30.0;
+        statusPanel.add(tmoutLabel, gridBagConstraints);
+
+        getContentPane().add(statusPanel, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 80, 650, 110));
 
         fileMenu.setText("File");
 
@@ -132,14 +275,6 @@ public class JBlinkenPanel extends javax.swing.JFrame {
 
         this.setVisible(false);         this.dispose();     }//GEN-LAST:event_exitMenuItemActionPerformed
 
-    private void startBTActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_startBTActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_startBTActionPerformed
-
-    private void udpPortFTFActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_udpPortFTFActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_udpPortFTFActionPerformed
-
         
     ImageIcon iconRed;
     ImageIcon iconGreen;   
@@ -152,13 +287,28 @@ public class JBlinkenPanel extends javax.swing.JFrame {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     javax.swing.JMenuItem exitMenuItem;
     javax.swing.JMenu fileMenu;
+    javax.swing.JPanel fillPanel;
     javax.swing.JLabel jLabel1;
+    javax.swing.JLabel jLabel2;
+    javax.swing.JLabel jLabel3;
+    javax.swing.JLabel jLabel4;
+    javax.swing.JLabel jLabel5;
+    javax.swing.JLabel jLabel6;
     javax.swing.JMenuBar jMenuBar1;
     javax.swing.JPanel jPanel1;
     javax.swing.JPanel jPanel2;
     javax.swing.JPanel jPanel3;
+    javax.swing.JPanel jPanel4;
+    javax.swing.JPanel labelPanel;
+    javax.swing.JPanel ledPanel;
+    javax.swing.JLabel nboundLabel;
+    javax.swing.JLabel oofLabel;
+    javax.swing.JLabel recvdLabel;
     javax.swing.JButton startBT;
+    javax.swing.JLabel statusLabel;
+    javax.swing.JPanel statusPanel;
     javax.swing.JButton stopBT;
+    javax.swing.JLabel tmoutLabel;
     javax.swing.JFormattedTextField udpPortFTF;
     // End of variables declaration//GEN-END:variables
 }

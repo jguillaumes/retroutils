@@ -104,6 +104,7 @@ public class JBlinkenServer {
                     jbudp = new JbsUdpListener(currentPort);
                     jbudp.start();
                     System.out.println("UDP listener thread started.");
+                    jbp.statusLabel.setText("Starting...");
                 }
             }
         });
@@ -112,11 +113,15 @@ public class JBlinkenServer {
             @Override
             public void actionPerformed(ActionEvent ae) {
                 System.out.println("Stopping UDP listener thread...");
-                try {
-                    jbudp.setToExit();
-                    jbudp.join(0);
-                    jbudp = null;
-                } catch (InterruptedException ex) {
+                jbp.statusLabel.setText("Stopping...");
+                if (jbudp != null) {
+                    try {
+                        jbudp.setToExit();
+                        jbudp.join(0);
+                        jbp.statusLabel.setText("Stopped");
+                        jbudp = null;
+                    } catch (InterruptedException ex) {
+                    }
                 }
                 System.out.println("UDP listener thread stopped.");
             }
@@ -132,12 +137,15 @@ public class JBlinkenServer {
                     System.out.flush();
                     jbudp.setToExit();
                     try {
+                        jbp.statusLabel.setText("Stopping...");
                         jbudp.join(0);
                     } catch (InterruptedException ex) {
                     }
                     currentPort = newport;
                     jbudp = new JbsUdpListener(currentPort);
                     jbudp.start();
+                    jbp.statusLabel.setText("Starting...");
+
                 }
             }
         });
@@ -289,8 +297,8 @@ public class JBlinkenServer {
                 DataInputStream is = null;
                 boolean usePacket = false;
                 InetAddress pair = null;
-                
-                socket = openSocket();      
+
+                socket = openSocket();
                 DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
                 while (!toExit) {
                     try {
@@ -316,6 +324,7 @@ public class JBlinkenServer {
                             }
                         } else {
                             pair = packet.getAddress();
+                            jbp.statusLabel.setText("Running, bound to " + pair.getHostAddress());                           
                             oldsequence = sequence;
                             usePacket = true;
                         }
@@ -330,6 +339,7 @@ public class JBlinkenServer {
                     } catch (SocketTimeoutException ste) {
                         if (pair != null) {
                             System.out.println("Timeout reading packet, unbinding");
+                            jbp.statusLabel.setText("Running, unbound");
                         }
                         pair = null;
                         oldsequence = 0;
