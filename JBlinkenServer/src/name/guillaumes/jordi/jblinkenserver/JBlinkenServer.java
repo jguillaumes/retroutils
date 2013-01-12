@@ -288,12 +288,14 @@ public class JBlinkenServer {
         public void run() {
             try {
                 byte[] buffer = new byte[4096];
-                byte function = 0;
-                byte flags = 0;
+                int function = 0;
+                int flags = 0;
                 long sequence,
                         oldsequence = 0;
-                short bflags = 0;
-                int numBytes = 0;
+                int bflags = 0;
+                int numDataBytes = 0;
+                int numAddrBytes = 0;
+                int numOtherBytes = 0;
                 DataInputStream is = null;
                 boolean usePacket = false;
                 InetAddress pair = null;
@@ -305,11 +307,13 @@ public class JBlinkenServer {
                         socket.receive(packet);
                         usePacket = false;
                         is = new DataInputStream(new ByteArrayInputStream(packet.getData()));
-                        function = is.readByte();
-                        flags = is.readByte();
+                        function = is.readShort();
+                        flags = is.readShort();
                         sequence = is.readInt();
                         bflags = is.readShort();
-                        numBytes = is.readUnsignedShort();
+                        numDataBytes = is.readUnsignedShort();
+                        numAddrBytes = is.readUnsignedShort();
+                        numOtherBytes = is.readUnsignedShort();
                         if (pair != null) {
                             if (pair.equals(packet.getAddress())) {
                                 if (sequence > oldsequence) {
@@ -329,8 +333,8 @@ public class JBlinkenServer {
                             usePacket = true;
                         }
                         if (usePacket) {
-                            if (numBytes != 2) {
-                                System.out.println("Wrong packet received, unsupported " + numBytes + " bytes packet.");
+                            if (numDataBytes != 2) {
+                                System.out.println("Wrong packet received, unsupported " + numDataBytes + " bytes packet.");
                             } else {
                                 int theNum = is.readUnsignedShort();
                                 setLights(bflags, theNum);
