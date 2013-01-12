@@ -14,9 +14,9 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "5FD3A08116A0A064009B75D1"
-               BuildableName = "BlinkenTestSerial"
-               BlueprintName = "BlinkenTestSerial"
+               BlueprintIdentifier = "5FD21B9F16935C1B00F65E56"
+               BuildableName = "BlinkenTestClient"
+               BlueprintName = "BlinkenTestClient"
                ReferencedContainer = "container:BlinkenServer.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -32,9 +32,9 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "5FD3A08116A0A064009B75D1"
-            BuildableName = "BlinkenTestSerial"
-            BlueprintName = "BlinkenTestSerial"
+            BlueprintIdentifier = "5FD21B9F16935C1B00F65E56"
+            BuildableName = "BlinkenTestClient"
+            BlueprintName = "BlinkenTestClient"
             ReferencedContainer = "container:BlinkenServer.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
@@ -51,19 +51,19 @@
       <BuildableProductRunnable>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "5FD3A08116A0A064009B75D1"
-            BuildableName = "BlinkenTestSerial"
-            BlueprintName = "BlinkenTestSerial"
+            BlueprintIdentifier = "5FD21B9F16935C1B00F65E56"
+            BuildableName = "BlinkenTestClient"
+            BlueprintName = "BlinkenTestClient"
             ReferencedContainer = "container:BlinkenServer.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "/dev/cu.usbmodem1d11"
+            argument = "tty:/dev/cu.usbmodem1d11:"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "50000"
+            argument = "250000"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
@@ -79,9 +79,9 @@
       <BuildableProductRunnable>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "5FD3A08116A0A064009B75D1"
-            BuildableName = "BlinkenTestSerial"
-            BlueprintName = "BlinkenTestSerial"
+            BlueprintIdentifier = "5FD21B9F16935C1B00F65E56"
+            BuildableName = "BlinkenTestClient"
+            BlueprintName = "BlinkenTestClient"
             ReferencedContainer = "container:BlinkenServer.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>

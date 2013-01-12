@@ -15,15 +15,12 @@
 		5FD21BA616935C1C00F65E56 /* BlinkenTestClient.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = 5FD21BA516935C1C00F65E56 /* BlinkenTestClient.1 */; };
 		5FD21BAB1693619800F65E56 /* auxfunc.c in Sources */ = {isa = PBXBuildFile; fileRef = 5FD21B9416930BF200F65E56 /* auxfunc.c */; };
 		5FD21BC316938CE700F65E56 /* libblinken.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5FD21BBE16938BBE00F65E56 /* libblinken.a */; };
-		5FD3A07716A08FFE009B75D1 /* blinkenclient.c in Sources */ = {isa = PBXBuildFile; fileRef = 5FD3A07516A08FFE009B75D1 /* blinkenclient.c */; };
-		5FD3A07816A08FFE009B75D1 /* blinkenclient.h in Headers */ = {isa = PBXBuildFile; fileRef = 5FD3A07616A08FFE009B75D1 /* blinkenclient.h */; };
+		5FD3A07716A08FFE009B75D1 /* blinkenudp.c in Sources */ = {isa = PBXBuildFile; fileRef = 5FD3A07516A08FFE009B75D1 /* blinkenudp.c */; };
+		5FD3A07816A08FFE009B75D1 /* blinkenclient.h in Headers */ = {isa = PBXBuildFile; fileRef = 5FD3A07616A08FFE009B75D1 /* blinkenclient.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		5FD3A07A16A09D33009B75D1 /* blinkenserial.c in Sources */ = {isa = PBXBuildFile; fileRef = 5FD3A07916A09D33009B75D1 /* blinkenserial.c */; };
 		5FD3A07C16A09E48009B75D1 /* blinkenserial.h in Headers */ = {isa = PBXBuildFile; fileRef = 5FD3A07B16A09E48009B75D1 /* blinkenserial.h */; };
-		5FD3A08816A0A064009B75D1 /* BlinkenTestSerial.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = 5FD3A08716A0A064009B75D1 /* BlinkenTestSerial.1 */; };
-		5FD3A08C16A0A06D009B75D1 /* libblinken.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5FD21BBE16938BBE00F65E56 /* libblinken.a */; };
-		5FD3A08E16A0A20C009B75D1 /* auxfunc.c in Sources */ = {isa = PBXBuildFile; fileRef = 5FD21B9416930BF200F65E56 /* auxfunc.c */; };
 		5FD3A09116A0A345009B75D1 /* BlinkenTestClient.c in Sources */ = {isa = PBXBuildFile; fileRef = 5FD3A08F16A0A344009B75D1 /* BlinkenTestClient.c */; };
-		5FD3A09316A0A3D2009B75D1 /* BlinkenTestSerial.c in Sources */ = {isa = PBXBuildFile; fileRef = 5FD3A09016A0A345009B75D1 /* BlinkenTestSerial.c */; };
+		5FEEB0EA16A1E99B006E4297 /* blinkenclient.c in Sources */ = {isa = PBXBuildFile; fileRef = 5FEEB0E816A1DA82006E4297 /* blinkenclient.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -47,16 +44,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 1;
 		};
-		5FD3A08016A0A064009B75D1 /* CopyFiles */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = /usr/share/man/man1/;
-			dstSubfolderSpec = 0;
-			files = (
-				5FD3A08816A0A064009B75D1 /* BlinkenTestSerial.1 in CopyFiles */,
-			);
-			runOnlyForDeploymentPostprocessing = 1;
-		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
@@ -70,14 +57,13 @@
 		5FD21BA016935C1B00F65E56 /* BlinkenTestClient */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = BlinkenTestClient; sourceTree = BUILT_PRODUCTS_DIR; };
 		5FD21BA516935C1C00F65E56 /* BlinkenTestClient.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = BlinkenTestClient.1; sourceTree = "<group>"; };
 		5FD21BBE16938BBE00F65E56 /* libblinken.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libblinken.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		5FD3A07516A08FFE009B75D1 /* blinkenclient.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = blinkenclient.c; sourceTree = "<group>"; };
+		5FD3A07516A08FFE009B75D1 /* blinkenudp.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = blinkenudp.c; sourceTree = "<group>"; };
 		5FD3A07616A08FFE009B75D1 /* blinkenclient.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = blinkenclient.h; sourceTree = "<group>"; };
 		5FD3A07916A09D33009B75D1 /* blinkenserial.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = blinkenserial.c; sourceTree = "<group>"; };
 		5FD3A07B16A09E48009B75D1 /* blinkenserial.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = blinkenserial.h; sourceTree = "<group>"; };
-		5FD3A08216A0A064009B75D1 /* BlinkenTestSerial */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = BlinkenTestSerial; sourceTree = BUILT_PRODUCTS_DIR; };
-		5FD3A08716A0A064009B75D1 /* BlinkenTestSerial.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = BlinkenTestSerial.1; sourceTree = "<group>"; };
 		5FD3A08F16A0A344009B75D1 /* BlinkenTestClient.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = BlinkenTestClient.c; sourceTree = "<group>"; };
-		5FD3A09016A0A345009B75D1 /* BlinkenTestSerial.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = BlinkenTestSerial.c; path = ../BlinkenTestClient/BlinkenTestSerial.c; sourceTree = "<group>"; };
+		5FEEB0E716A1D7D2006E4297 /* blinkenudp.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = blinkenudp.h; sourceTree = "<group>"; };
+		5FEEB0E816A1DA82006E4297 /* blinkenclient.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = blinkenclient.c; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -103,14 +89,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		5FD3A07F16A0A064009B75D1 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				5FD3A08C16A0A06D009B75D1 /* libblinken.a in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -120,7 +98,6 @@
 				5FD3A07416A08FFE009B75D1 /* BlinkenClient */,
 				5FD21B801692F16100F65E56 /* BlinkenServer */,
 				5FD21BA216935C1B00F65E56 /* BlinkenTestClient */,
-				5FD3A08416A0A064009B75D1 /* BlinkenTestSerial */,
 				5FD21B7E1692F16100F65E56 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -132,7 +109,6 @@
 				5FD21B7D1692F16100F65E56 /* BlinkenServer */,
 				5FD21BA016935C1B00F65E56 /* BlinkenTestClient */,
 				5FD21BBE16938BBE00F65E56 /* libblinken.a */,
-				5FD3A08216A0A064009B75D1 /* BlinkenTestSerial */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -163,20 +139,13 @@
 			isa = PBXGroup;
 			children = (
 				5FD3A07B16A09E48009B75D1 /* blinkenserial.h */,
-				5FD3A07516A08FFE009B75D1 /* blinkenclient.c */,
+				5FD3A07516A08FFE009B75D1 /* blinkenudp.c */,
 				5FD3A07616A08FFE009B75D1 /* blinkenclient.h */,
 				5FD3A07916A09D33009B75D1 /* blinkenserial.c */,
+				5FEEB0E716A1D7D2006E4297 /* blinkenudp.h */,
+				5FEEB0E816A1DA82006E4297 /* blinkenclient.c */,
 			);
 			path = BlinkenClient;
-			sourceTree = "<group>";
-		};
-		5FD3A08416A0A064009B75D1 /* BlinkenTestSerial */ = {
-			isa = PBXGroup;
-			children = (
-				5FD3A09016A0A345009B75D1 /* BlinkenTestSerial.c */,
-				5FD3A08716A0A064009B75D1 /* BlinkenTestSerial.1 */,
-			);
-			path = BlinkenTestSerial;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -245,23 +214,6 @@
 			productReference = 5FD21BBE16938BBE00F65E56 /* libblinken.a */;
 			productType = "com.apple.product-type.library.static";
 		};
-		5FD3A08116A0A064009B75D1 /* BlinkenTestSerial */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 5FD3A08916A0A064009B75D1 /* Build configuration list for PBXNativeTarget "BlinkenTestSerial" */;
-			buildPhases = (
-				5FD3A07E16A0A064009B75D1 /* Sources */,
-				5FD3A07F16A0A064009B75D1 /* Frameworks */,
-				5FD3A08016A0A064009B75D1 /* CopyFiles */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			name = BlinkenTestSerial;
-			productName = BlinkenTestSerial;
-			productReference = 5FD3A08216A0A064009B75D1 /* BlinkenTestSerial */;
-			productType = "com.apple.product-type.tool";
-		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -286,7 +238,6 @@
 				5FD21B7C1692F16100F65E56 /* BlinkenServer */,
 				5FD21B9F16935C1B00F65E56 /* BlinkenTestClient */,
 				5FD21BBD16938BBE00F65E56 /* blinken */,
-				5FD3A08116A0A064009B75D1 /* BlinkenTestSerial */,
 			);
 		};
 /* End PBXProject section */
@@ -316,17 +267,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				5FD3A07716A08FFE009B75D1 /* blinkenclient.c in Sources */,
+				5FD3A07716A08FFE009B75D1 /* blinkenudp.c in Sources */,
 				5FD3A07A16A09D33009B75D1 /* blinkenserial.c in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		5FD3A07E16A0A064009B75D1 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				5FD3A08E16A0A20C009B75D1 /* auxfunc.c in Sources */,
-				5FD3A09316A0A3D2009B75D1 /* BlinkenTestSerial.c in Sources */,
+				5FEEB0EA16A1E99B006E4297 /* blinkenclient.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -417,6 +360,8 @@
 			buildSettings = {
 				EXECUTABLE_PREFIX = lib;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				RUN_CLANG_STATIC_ANALYZER = YES;
+				SCAN_ALL_SOURCE_FILES_FOR_INCLUDES = YES;
 			};
 			name = Debug;
 		};
@@ -425,20 +370,8 @@
 			buildSettings = {
 				EXECUTABLE_PREFIX = lib;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-			};
-			name = Release;
-		};
-		5FD3A08A16A0A064009B75D1 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				PRODUCT_NAME = "$(TARGET_NAME)";
-			};
-			name = Debug;
-		};
-		5FD3A08B16A0A064009B75D1 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				RUN_CLANG_STATIC_ANALYZER = YES;
+				SCAN_ALL_SOURCE_FILES_FOR_INCLUDES = YES;
 			};
 			name = Release;
 		};
@@ -480,14 +413,6 @@
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
-		};
-		5FD3A08916A0A064009B75D1 /* Build configuration list for PBXNativeTarget "BlinkenTestSerial" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				5FD3A08A16A0A064009B75D1 /* Debug */,
-				5FD3A08B16A0A064009B75D1 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
 		};
 /* End XCConfigurationList section */
 	};

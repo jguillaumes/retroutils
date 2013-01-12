@@ -59,11 +59,7 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "127.0.0.1"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "11696"
+            argument = "udp:127.0.0.1:11696"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument

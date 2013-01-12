@@ -31,13 +31,26 @@
 #ifndef BlinkenServer_blinkenclient_h
 #define BlinkenServer_blinkenclient_h
 
+#include <limits.h>
 #include <netinet/in.h>
+
+#include "blinkenserial.h"
+#include "blinkenudp.h"
 
 typedef unsigned char BYTE;
 typedef unsigned short WORD;
 typedef unsigned int LONGWORD;
 
 #define DEF_PORT    11696
+
+/*
+ * Connection / hardware type
+ */
+typedef enum {
+    BLKT_LOCAL = 0,
+    BLKT_SERIAL = 1,
+    BLKT_UDP = 2
+} blnk_conntype;
 
 /*
  *   Message (packet) flags
@@ -80,9 +93,11 @@ typedef struct s_blkpacket BLKPACKET;
 typedef struct s_blkpacket *PBLKPACKET;
 
 struct s_blinkenstatus {
-    struct      sockaddr_in serverAddress;
-    int         socket;
-    LONGWORD    sequence;
+    blnk_conntype conntype;
+    union {
+        UDPSTATUS udp_status;
+        TTYSTATUS tty_status;
+    } conn;
 };
 
 typedef struct s_blinkenstatus BLINKENSTATUS;
@@ -92,10 +107,23 @@ typedef struct s_blinkenstatus *PBLINKENSTATUS;
 /*
  * Function prototypes
  */
-PBLINKENSTATUS blk_setup(char *hostname, WORD portNumber);
-int blk_sendbyte(PBLINKENSTATUS pblk, BYTE b, int resync);
-int blk_sendword(PBLINKENSTATUS pblk, WORD w, int resync);
-int blk_senderror(PBLINKENSTATUS pblk, int resync);
+PBLINKENSTATUS blk_open(char *connString);
+int blk_sendByte(PBLINKENSTATUS pblk, BYTE b, int resync);
+int blk_sendWord(PBLINKENSTATUS pblk, WORD w, int resync);
+int blk_sendError(PBLINKENSTATUS pblk, int resync);
 void blk_close(PBLINKENSTATUS pblk);
+
+PBLINKENSTATUS blk_udpOpen(char *server, char *port);
+int blk_udpSendByte(PBLINKENSTATUS pblk, BYTE b, int resync);
+int blk_udpSendWord(PBLINKENSTATUS pblk, WORD w, int resync);
+int blk_udpSendError(PBLINKENSTATUS pblk, int resync);
+void blk_udpClose(PBLINKENSTATUS pblk);
+
+PBLINKENSTATUS blk_serialOpen(char *server);
+int blk_serialSendByte(PBLINKENSTATUS pblk, BYTE b, int resync);
+int blk_serialSendWord(PBLINKENSTATUS pblk, WORD w, int resync);
+int blk_serialSendError(PBLINKENSTATUS pblk);
+void blk_serialClose(PBLINKENSTATUS pblk);
+
 
 #endif

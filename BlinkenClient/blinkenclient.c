@@ -1,127 +1,109 @@
-/* blinkenclient.c: BlinkenLights for the PDP11
- ------------------------------------------------------------------------------
- Copyright (c) 2013, Jordi Guillaumes Pons
- 
- Permission is hereby granted, free of charge, to any person obtaining a
- copy of this software and associated documentation files (the "Software"),
- to deal in the Software without restriction, including without limitation
- the rights to use, copy, modify, merge, publish, distribute, sublicense,
- and/or sell copies of the Software, and to permit persons to whom the
- Software is furnished to do so, subject to the following conditions:
- 
- The above copyright notice and this permission notice shall be included in
- all copies or substantial portions of the Software.
- 
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
- THE AUTHOR BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
- IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
- CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- 
- Except as contained in this notice, the name of the author shall not be
- used in advertising or otherwise to promote the sale, use or other dealings
- in this Software without prior written authorization from the author.
- 
- -----------------------------------------------------------------------------
- */
+//
+//  blinkenclient.c
+//  BlinkenServer
+//
+//  Created by Jordi Guillaumes Pons on 12/01/13.
+//  Copyright (c) 2013 Jordi Guillaumes Pons. All rights reserved.
+//
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <netdb.h>
-#include <syslog.h>
-#include <unistd.h>
-#include <errno.h>
+#include <ctype.h>
 #include <string.h>
-
-#include <sys/socket.h>
-#include <netinet/in.h>
 
 #include "blinkenclient.h"
 
-
-PBLINKENSTATUS blk_setup(char *hostname, WORD portNumber) {
-    PBLINKENSTATUS bkstat = NULL;
-    struct hostent *serverHost = NULL;
-    int udpsock = 0;
-    struct protoent *udpproto;
-
-    serverHost = gethostbyname(hostname);
-    if (serverHost == NULL) {
-        fprintf(stderr, "Host %s not found\n", hostname);
-        return NULL;
+static void allUpper(char *string) {
+    char *ptr = string;
+    while(*ptr != '\0') {
+        *ptr = toupper(*ptr);
+        ptr++;
     }
-    udpproto = getprotobyname("udp");
-    if (udpproto == NULL) {
-        fprintf(stderr, "Error getting information for protocol udp\n");
-        fprintf(stderr, "This is probably a configuration problem!\n");
-        return NULL;
-    }
-    udpsock = socket(PF_INET, SOCK_DGRAM, udpproto->p_proto);
-    if (udpsock < 0) {
-        perror("getting socket");
-        return NULL;
-    }
-    
-    bkstat = malloc(sizeof(BLINKENSTATUS));
-    if (bkstat == NULL) {
-        fprintf(stderr, "Can't get memory to allocate client status!\n");
-        return NULL;
-    }
-    memset(bkstat, 0, sizeof(BLINKENSTATUS));
-    bkstat->sequence = 0;
-    bkstat->socket = udpsock;
-    bkstat->serverAddress.sin_family = AF_INET;
-    bkstat->serverAddress.sin_port = htons(portNumber);
-    bkstat->serverAddress.sin_addr.s_addr = *((in_addr_t *)serverHost->h_addr_list[0]);
-#ifdef OSX
-    bkstat->serverAddress.sin_len
-#endif
-    return bkstat;
 }
 
-int blk_sendbyte(PBLINKENSTATUS pblk, BYTE b, int resync) {
-    BLKPACKET packet;
-    memset(&packet, 0, sizeof(BLKPACKET));
+
+PBLINKENSTATUS blk_open(char *connString) {
+    char *pconntype = NULL;
+    char *pname = NULL;
+    char *pnum = NULL;
+    char *buff = NULL;
+    int lConnString = 0;
+
+    lConnString = (int) strlen(connString);
+    buff = alloca(lConnString+1);
+    memset(buff,0,lConnString+1);
+    strncpy(buff, connString, lConnString);
     
-    packet.sequence = htonl(++(pblk->sequence));
-    packet.payload.numDataBytes = htons(1);
-    packet.flags = resync ? FLG_RESYNC : 0;
-    packet.payload.data[0] = b;
-    return (int) sendto(pblk->socket, &packet, sizeof(packet), 0, (struct sockaddr *) &(pblk->serverAddress), sizeof(struct sockaddr));
+    pconntype = strtok(buff, ":");
+    if (pconntype == NULL) return NULL;
+    allUpper(pconntype);
+    
+    pname = strtok(NULL,":");
+    if (pname == NULL) return NULL;
+    
+    pnum = strtok(NULL, ":");
+    
+    if (strcmp(pconntype, "UDP") == 0) {
+        return blk_udpOpen(pname, pnum);
+    } else if (strcmp(pconntype, "TTY") == 0) {
+        return blk_serialOpen(pname);
+    } else {
+        fprintf(stderr, "Invalid connection type (%s)\n", pconntype);
+        return NULL;
+    }
 }
 
-int blk_sendword(PBLINKENSTATUS pblk, WORD w, int resync) {
-  WORD nword;
-    BLKPACKET packet;
-    memset(&packet, 0, sizeof(BLKPACKET));
-    
-    nword = htons(w);
-
-    packet.sequence = htonl(++(pblk->sequence));
-    packet.payload.numDataBytes= htons(2);
-    packet.flags = resync ? FLG_RESYNC : 0;
-    packet.payload.data[0] = (nword >> 8) & 0xFF;
-    packet.payload.data[1] = nword & 0xFF;
-    return (int) sendto(pblk->socket, &packet, sizeof(packet), 0, (struct sockaddr *) &(pblk->serverAddress), sizeof(struct sockaddr));
+int blk_sendByte(PBLINKENSTATUS pblk, BYTE b, int resync) {
+    switch(pblk->conntype) {
+        case BLKT_SERIAL:
+            return blk_serialSendByte(pblk, b, resync);
+            break;
+        case BLKT_UDP:
+            return blk_udpSendByte(pblk, b, resync);
+            break;
+        default:
+            fprintf(stderr, "Unsupported connection type (%d)\n", pblk->conntype);
+            return -1;
+    }
 }
 
-int blk_senderror(PBLINKENSTATUS pblk, int resync) {
-    BLKPACKET packet;
-    memset(&packet, 0, sizeof(BLKPACKET));
-    
-    packet.sequence = htonl(++(pblk->sequence));
-    packet.payload.numDataBytes= htons(2);
-    packet.flags = resync ? FLG_RESYNC : 0;
-    packet.payload.bflags = htons(BLF_ERROR);
-    packet.payload.data[0] = 0;
-    packet.payload.data[1] = 0;
-    return (int) sendto(pblk->socket, &packet, sizeof(packet), 0, (struct sockaddr *) &(pblk->serverAddress), sizeof(struct sockaddr));
+int blk_sendWord(PBLINKENSTATUS pblk, WORD w, int resync) {
+    switch(pblk->conntype) {
+        case BLKT_SERIAL:
+            return blk_serialSendWord(pblk, w, resync);
+            break;
+        case BLKT_UDP:
+            return blk_udpSendWord(pblk, w, resync);
+            break;
+        default:
+            fprintf(stderr, "Unsupported connection type (%d)\n", pblk->conntype);
+            return -1;
+    }    
 }
 
+int blk_sendError(PBLINKENSTATUS pblk, int resync) {
+    switch(pblk->conntype) {
+        case BLKT_SERIAL:
+            return blk_serialSendError(pblk);
+            break;
+        case BLKT_UDP:
+            return blk_udpSendError(pblk, resync);
+            break;
+        default:
+            fprintf(stderr, "Unsupported connection type (%d)\n", pblk->conntype);
+            return -1;
+    }    
+}
 
 void blk_close(PBLINKENSTATUS pblk) {
-    close(pblk->socket);
-    free(pblk);
+    switch(pblk->conntype) {
+        case BLKT_SERIAL:
+            blk_serialClose(pblk);
+            break;
+        case BLKT_UDP:
+            blk_udpClose(pblk);
+            break;
+        default:
+            fprintf(stderr, "Unsupported connection type (%d)\n", pblk->conntype);
+    }
 }
-

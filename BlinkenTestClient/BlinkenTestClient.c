@@ -14,21 +14,23 @@
 
 int main(int argc, char **argv) {
     PBLINKENSTATUS pb=NULL;
-    char *hostname = argv[1];
-    WORD port = atoi(argv[2]);
-    int delay = atoi(argv[3]);
+    char *conname = argv[1];
+    int delay = atoi(argv[2]);
+    
     int i=0;
     int resync=1;
     
-    pb=blk_setup(hostname, port);
+    pb=blk_open(conname);
     if (pb!=NULL) {
         for(i=65535;i>=0;i--) {
-            blk_sendword(pb, (WORD) htons(i), resync);
+            blk_sendWord(pb, (WORD) i, resync);
             resync=0;
             usleep(delay);
-            blk_senderror(pb, resync);
+            blk_sendError(pb, resync);
             usleep(delay);
         }
         blk_close(pb);
+    } else {
+        perror("BlinkenTestClient");
     }
 }

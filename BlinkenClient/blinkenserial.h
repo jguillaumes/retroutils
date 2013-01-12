@@ -1,9 +1,12 @@
 #ifndef _BLINKSERIAL_H
 
-int blk_serialOpen(char *dev);
-int blk_serialClose(int fd);
-int blk_serialSendWord(int fd, int value, int flags);
-int blk_serialSendError(int fd);
+struct tty_status_s {
+    char    ttyName[_POSIX_PATH_MAX];
+    int     fileDesc;
+};
+
+typedef struct tty_status_s TTYSTATUS;
+typedef struct tty_status_s *PTTYSTATUS;
 
 #define _BLINKSERIAL_H
 #endif
