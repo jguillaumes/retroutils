@@ -41,7 +41,6 @@ typedef unsigned char BYTE;
 typedef unsigned short WORD;
 typedef unsigned int LONGWORD;
 
-#define DEF_PORT    11696
 
 /*
  * Connection / hardware type
@@ -76,7 +75,7 @@ struct s_payload {
     WORD          numDataBytes;
     WORD          numAddrBytes;
     WORD          numOtherBytes;
-    BYTE          data[32];
+    BYTE          data[16];
 };
 
 typedef struct s_payload PAYLOAD;

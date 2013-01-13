@@ -9,6 +9,9 @@
 #ifndef BlinkenServer_blinkenudp_h
 #define BlinkenServer_blinkenudp_h
 
+#define BLK_DEF_PORT    11696
+
+
 struct udp_status_s {
     struct  sockaddr_in serverAddress;
     int     socket;

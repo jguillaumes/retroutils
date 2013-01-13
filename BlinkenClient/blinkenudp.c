@@ -51,15 +51,19 @@ PBLINKENSTATUS blk_udpOpen(char *hostname, char *portNumberStr) {
     int udpsock = 0;
     struct protoent *udpproto;
 
-    portconv = strtol(portNumberStr, &pnumconv, 10);
-    if (*pnumconv == '\0') {
-        portnum = htons(portconv);
+    if (portNumberStr == NULL) {
+        portnum = BLK_DEF_PORT;
     } else {
-        service =  getservbyname(portNumberStr, "udp");
-        if (service != NULL) {
-            portnum = service->s_port;
+        portconv = strtol(portNumberStr, &pnumconv, 10);
+        if (*pnumconv == '\0') {
+            portnum = htons(portconv);
         } else {
-            return NULL;
+            service =  getservbyname(portNumberStr, "udp");
+            if (service != NULL) {
+                portnum = service->s_port;
+            } else {
+                return NULL;
+            }
         }
     }
     

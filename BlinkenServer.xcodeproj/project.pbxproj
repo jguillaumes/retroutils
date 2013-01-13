@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		5FBB0C1016A200A000DC8B2F /* blinkenudp.h in Headers */ = {isa = PBXBuildFile; fileRef = 5FEEB0E716A1D7D2006E4297 /* blinkenudp.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		5FD21B821692F16100F65E56 /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = 5FD21B811692F16100F65E56 /* main.c */; };
 		5FD21B841692F16100F65E56 /* BlinkenServer.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = 5FD21B831692F16100F65E56 /* BlinkenServer.1 */; };
 		5FD21B911692F2F200F65E56 /* blinkenserver.c in Sources */ = {isa = PBXBuildFile; fileRef = 5FD21B901692F2F200F65E56 /* blinkenserver.c */; };
@@ -18,7 +19,7 @@
 		5FD3A07716A08FFE009B75D1 /* blinkenudp.c in Sources */ = {isa = PBXBuildFile; fileRef = 5FD3A07516A08FFE009B75D1 /* blinkenudp.c */; };
 		5FD3A07816A08FFE009B75D1 /* blinkenclient.h in Headers */ = {isa = PBXBuildFile; fileRef = 5FD3A07616A08FFE009B75D1 /* blinkenclient.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		5FD3A07A16A09D33009B75D1 /* blinkenserial.c in Sources */ = {isa = PBXBuildFile; fileRef = 5FD3A07916A09D33009B75D1 /* blinkenserial.c */; };
-		5FD3A07C16A09E48009B75D1 /* blinkenserial.h in Headers */ = {isa = PBXBuildFile; fileRef = 5FD3A07B16A09E48009B75D1 /* blinkenserial.h */; };
+		5FD3A07C16A09E48009B75D1 /* blinkenserial.h in Headers */ = {isa = PBXBuildFile; fileRef = 5FD3A07B16A09E48009B75D1 /* blinkenserial.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		5FD3A09116A0A345009B75D1 /* BlinkenTestClient.c in Sources */ = {isa = PBXBuildFile; fileRef = 5FD3A08F16A0A344009B75D1 /* BlinkenTestClient.c */; };
 		5FEEB0EA16A1E99B006E4297 /* blinkenclient.c in Sources */ = {isa = PBXBuildFile; fileRef = 5FEEB0E816A1DA82006E4297 /* blinkenclient.c */; };
 /* End PBXBuildFile section */
@@ -157,6 +158,7 @@
 			files = (
 				5FD3A07816A08FFE009B75D1 /* blinkenclient.h in Headers */,
 				5FD3A07C16A09E48009B75D1 /* blinkenserial.h in Headers */,
+				5FBB0C1016A200A000DC8B2F /* blinkenudp.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
