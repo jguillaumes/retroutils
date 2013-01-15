@@ -16,6 +16,8 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
+import java.text.NumberFormat;
+import javax.swing.Timer;
 
 /**
  * Software implementation of the PDP-11 console "data lights".
@@ -67,7 +69,14 @@ public class JBlinkenServer {
     private JBlinkenPanel jbp = null;
     private JbsUdpListener jbudp = null;
     private int currentPort = BLS_DEFAULT_PORT;
-
+    
+        private long received = 0;
+        private long outOfOrder = 0;
+        private long nonBound = 0;
+        private long timeOuts = 0;
+        private long numSkipped = 0;
+        private long oldsequence = 0;
+        
     /**
      * Non-static running procedure. 
      * Called my main()
@@ -127,6 +136,18 @@ public class JBlinkenServer {
             }
         });
 
+        jbp.zeroBT.addActionListener(new ActionListener() {
+
+            @Override
+            public void actionPerformed(ActionEvent ae) {
+                received = 0;
+                outOfOrder = 0;
+                nonBound = 0;
+                timeOuts = 0;
+                numSkipped = 0;
+            }
+        });
+                
         jbp.udpPortFTF.addActionListener(new ActionListener() { // UDP port change
 
             @Override
@@ -237,13 +258,14 @@ public class JBlinkenServer {
      * Inner private class. It implements the UDP listener and runs
      * in a separate thread.
      */
-    private class JbsUdpListener extends Thread {
+    private class JbsUdpListener extends Thread implements ActionListener {
 
         private boolean toExit = false;
         private int udpPort;
         private DatagramSocket socket = null;
         private int timeOut = BLS_DEFAULT_TIMEOUT;
 
+        
         /**
          * Public constructor
          * @param port UDP port to listen on
@@ -287,11 +309,11 @@ public class JBlinkenServer {
         @Override
         public void run() {
             try {
+                Timer timer = new Timer(1000, this);
                 byte[] buffer = new byte[4096];
                 int function = 0;
                 int flags = 0;
-                long sequence,
-                        oldsequence = 0;
+                long sequence;
                 int bflags = 0;
                 int numDataBytes = 0;
                 int numAddrBytes = 0;
@@ -302,9 +324,11 @@ public class JBlinkenServer {
 
                 socket = openSocket();
                 DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+                timer.start();
                 while (!toExit) {
                     try {
                         socket.receive(packet);
+                        received++;
                         usePacket = false;
                         is = new DataInputStream(new ByteArrayInputStream(packet.getData()));
                         function = is.readShort();
@@ -323,16 +347,26 @@ public class JBlinkenServer {
                                     oldsequence = sequence;
                                     usePacket = true;
                                 } else {
+                                    outOfOrder++;
                                     System.err.println("Packet out of sequence " + sequence + " vs " + oldsequence);
                                 }
+                            } else {
+                                    System.err.println("Packet from non-bound source " + 
+                                            packet.getAddress() + " (bound address is " + pair + ")");
+                                    usePacket = false;
+                                    nonBound++;
                             }
                         } else {
                             pair = packet.getAddress();
                             jbp.statusLabel.setText("Running, bound to " + pair.getHostAddress());                           
-                            oldsequence = sequence;
                             usePacket = true;
                         }
                         if (usePacket) {
+                            if (sequence - oldsequence > 1) {
+                                numSkipped += (sequence - oldsequence - 1);
+                            }
+                            oldsequence = sequence;
+
                             if (numDataBytes != 2) {
                                 System.out.println("Wrong packet received, unsupported " + numDataBytes + " bytes packet.");
                             } else {
@@ -347,11 +381,14 @@ public class JBlinkenServer {
                         }
                         pair = null;
                         oldsequence = 0;
+                        timeOuts++;
                     } catch (IOException ex) {
                         System.err.println("IOError reading socket");
                         throw new RuntimeException(ex);
                     }
                 }
+                timer.stop();
+                timer = null;
                 socket.close();
                 socket = null;
             } catch (SocketException ex) {
@@ -359,6 +396,16 @@ public class JBlinkenServer {
                 ex.printStackTrace(System.err);
                 setToExit();
             }
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent ae) {
+            NumberFormat nf = NumberFormat.getNumberInstance();
+            jbp.recvdLabel.setText(nf.format(received));
+            jbp.oofLabel.setText(nf.format(outOfOrder));
+            jbp.nboundLabel.setText(nf.format(nonBound));
+            jbp.nskipLabel.setText(nf.format(numSkipped));
+            jbp.tmoutLabel.setText(nf.format(timeOuts));
         }
     };
 }
