@@ -1,0 +1,422 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		5FBB0C1016A200A000DC8B2F /* blinkenudp.h in Headers */ = {isa = PBXBuildFile; fileRef = 5FEEB0E716A1D7D2006E4297 /* blinkenudp.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		5FD21B821692F16100F65E56 /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = 5FD21B811692F16100F65E56 /* main.c */; };
+		5FD21B841692F16100F65E56 /* BlinkenServer.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = 5FD21B831692F16100F65E56 /* BlinkenServer.1 */; };
+		5FD21B911692F2F200F65E56 /* blinkenserver.c in Sources */ = {isa = PBXBuildFile; fileRef = 5FD21B901692F2F200F65E56 /* blinkenserver.c */; };
+		5FD21B931692F77000F65E56 /* logger.c in Sources */ = {isa = PBXBuildFile; fileRef = 5FD21B921692F77000F65E56 /* logger.c */; };
+		5FD21B9516930BF200F65E56 /* auxfunc.c in Sources */ = {isa = PBXBuildFile; fileRef = 5FD21B9416930BF200F65E56 /* auxfunc.c */; };
+		5FD21BA616935C1C00F65E56 /* BlinkenTestClient.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = 5FD21BA516935C1C00F65E56 /* BlinkenTestClient.1 */; };
+		5FD21BAB1693619800F65E56 /* auxfunc.c in Sources */ = {isa = PBXBuildFile; fileRef = 5FD21B9416930BF200F65E56 /* auxfunc.c */; };
+		5FD21BC316938CE700F65E56 /* libblinken.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5FD21BBE16938BBE00F65E56 /* libblinken.a */; };
+		5FD3A07716A08FFE009B75D1 /* blinkenudp.c in Sources */ = {isa = PBXBuildFile; fileRef = 5FD3A07516A08FFE009B75D1 /* blinkenudp.c */; };
+		5FD3A07816A08FFE009B75D1 /* blinkenclient.h in Headers */ = {isa = PBXBuildFile; fileRef = 5FD3A07616A08FFE009B75D1 /* blinkenclient.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		5FD3A07A16A09D33009B75D1 /* blinkenserial.c in Sources */ = {isa = PBXBuildFile; fileRef = 5FD3A07916A09D33009B75D1 /* blinkenserial.c */; };
+		5FD3A07C16A09E48009B75D1 /* blinkenserial.h in Headers */ = {isa = PBXBuildFile; fileRef = 5FD3A07B16A09E48009B75D1 /* blinkenserial.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		5FD3A09116A0A345009B75D1 /* BlinkenTestClient.c in Sources */ = {isa = PBXBuildFile; fileRef = 5FD3A08F16A0A344009B75D1 /* BlinkenTestClient.c */; };
+		5FEEB0EA16A1E99B006E4297 /* blinkenclient.c in Sources */ = {isa = PBXBuildFile; fileRef = 5FEEB0E816A1DA82006E4297 /* blinkenclient.c */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		5FD21B7B1692F16100F65E56 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+				5FD21B841692F16100F65E56 /* BlinkenServer.1 in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+		5FD21B9E16935C1B00F65E56 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+				5FD21BA616935C1C00F65E56 /* BlinkenTestClient.1 in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		5FD21B7D1692F16100F65E56 /* BlinkenServer */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = BlinkenServer; sourceTree = BUILT_PRODUCTS_DIR; };
+		5FD21B811692F16100F65E56 /* main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
+		5FD21B831692F16100F65E56 /* BlinkenServer.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = BlinkenServer.1; sourceTree = "<group>"; };
+		5FD21B8F1692F19600F65E56 /* blinkenserver.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = blinkenserver.h; sourceTree = "<group>"; };
+		5FD21B901692F2F200F65E56 /* blinkenserver.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = blinkenserver.c; sourceTree = "<group>"; };
+		5FD21B921692F77000F65E56 /* logger.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = logger.c; sourceTree = "<group>"; };
+		5FD21B9416930BF200F65E56 /* auxfunc.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = auxfunc.c; sourceTree = "<group>"; };
+		5FD21BA016935C1B00F65E56 /* BlinkenTestClient */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = BlinkenTestClient; sourceTree = BUILT_PRODUCTS_DIR; };
+		5FD21BA516935C1C00F65E56 /* BlinkenTestClient.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = BlinkenTestClient.1; sourceTree = "<group>"; };
+		5FD21BBE16938BBE00F65E56 /* libblinken.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libblinken.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		5FD3A07516A08FFE009B75D1 /* blinkenudp.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = blinkenudp.c; sourceTree = "<group>"; };
+		5FD3A07616A08FFE009B75D1 /* blinkenclient.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = blinkenclient.h; sourceTree = "<group>"; };
+		5FD3A07916A09D33009B75D1 /* blinkenserial.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = blinkenserial.c; sourceTree = "<group>"; };
+		5FD3A07B16A09E48009B75D1 /* blinkenserial.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = blinkenserial.h; sourceTree = "<group>"; };
+		5FD3A08F16A0A344009B75D1 /* BlinkenTestClient.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = BlinkenTestClient.c; sourceTree = "<group>"; };
+		5FEEB0E716A1D7D2006E4297 /* blinkenudp.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = blinkenudp.h; sourceTree = "<group>"; };
+		5FEEB0E816A1DA82006E4297 /* blinkenclient.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = blinkenclient.c; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		5FD21B7A1692F16100F65E56 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		5FD21B9D16935C1B00F65E56 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5FD21BC316938CE700F65E56 /* libblinken.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		5FD21BBB16938BBE00F65E56 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		5FD21B721692F16000F65E56 = {
+			isa = PBXGroup;
+			children = (
+				5FD3A07416A08FFE009B75D1 /* BlinkenClient */,
+				5FD21B801692F16100F65E56 /* BlinkenServer */,
+				5FD21BA216935C1B00F65E56 /* BlinkenTestClient */,
+				5FD21B7E1692F16100F65E56 /* Products */,
+			);
+			sourceTree = "<group>";
+			usesTabs = 0;
+		};
+		5FD21B7E1692F16100F65E56 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				5FD21B7D1692F16100F65E56 /* BlinkenServer */,
+				5FD21BA016935C1B00F65E56 /* BlinkenTestClient */,
+				5FD21BBE16938BBE00F65E56 /* libblinken.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		5FD21B801692F16100F65E56 /* BlinkenServer */ = {
+			isa = PBXGroup;
+			children = (
+				5FD21B811692F16100F65E56 /* main.c */,
+				5FD21B831692F16100F65E56 /* BlinkenServer.1 */,
+				5FD21B8F1692F19600F65E56 /* blinkenserver.h */,
+				5FD21B901692F2F200F65E56 /* blinkenserver.c */,
+				5FD21B921692F77000F65E56 /* logger.c */,
+				5FD21B9416930BF200F65E56 /* auxfunc.c */,
+			);
+			path = BlinkenServer;
+			sourceTree = "<group>";
+		};
+		5FD21BA216935C1B00F65E56 /* BlinkenTestClient */ = {
+			isa = PBXGroup;
+			children = (
+				5FD3A08F16A0A344009B75D1 /* BlinkenTestClient.c */,
+				5FD21BA516935C1C00F65E56 /* BlinkenTestClient.1 */,
+			);
+			path = BlinkenTestClient;
+			sourceTree = "<group>";
+		};
+		5FD3A07416A08FFE009B75D1 /* BlinkenClient */ = {
+			isa = PBXGroup;
+			children = (
+				5FD3A07B16A09E48009B75D1 /* blinkenserial.h */,
+				5FD3A07516A08FFE009B75D1 /* blinkenudp.c */,
+				5FD3A07616A08FFE009B75D1 /* blinkenclient.h */,
+				5FD3A07916A09D33009B75D1 /* blinkenserial.c */,
+				5FEEB0E716A1D7D2006E4297 /* blinkenudp.h */,
+				5FEEB0E816A1DA82006E4297 /* blinkenclient.c */,
+			);
+			path = BlinkenClient;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXHeadersBuildPhase section */
+		5FD21BBC16938BBE00F65E56 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5FD3A07816A08FFE009B75D1 /* blinkenclient.h in Headers */,
+				5FD3A07C16A09E48009B75D1 /* blinkenserial.h in Headers */,
+				5FBB0C1016A200A000DC8B2F /* blinkenudp.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXHeadersBuildPhase section */
+
+/* Begin PBXNativeTarget section */
+		5FD21B7C1692F16100F65E56 /* BlinkenServer */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 5FD21B871692F16100F65E56 /* Build configuration list for PBXNativeTarget "BlinkenServer" */;
+			buildPhases = (
+				5FD21B791692F16100F65E56 /* Sources */,
+				5FD21B7A1692F16100F65E56 /* Frameworks */,
+				5FD21B7B1692F16100F65E56 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = BlinkenServer;
+			productName = BlinkenServer;
+			productReference = 5FD21B7D1692F16100F65E56 /* BlinkenServer */;
+			productType = "com.apple.product-type.tool";
+		};
+		5FD21B9F16935C1B00F65E56 /* BlinkenTestClient */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 5FD21BA716935C1C00F65E56 /* Build configuration list for PBXNativeTarget "BlinkenTestClient" */;
+			buildPhases = (
+				5FD21B9C16935C1B00F65E56 /* Sources */,
+				5FD21B9D16935C1B00F65E56 /* Frameworks */,
+				5FD21B9E16935C1B00F65E56 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = BlinkenTestClient;
+			productName = BlinkenTestClient;
+			productReference = 5FD21BA016935C1B00F65E56 /* BlinkenTestClient */;
+			productType = "com.apple.product-type.tool";
+		};
+		5FD21BBD16938BBE00F65E56 /* blinken */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 5FD21BBF16938BBE00F65E56 /* Build configuration list for PBXNativeTarget "blinken" */;
+			buildPhases = (
+				5FD21BBA16938BBE00F65E56 /* Sources */,
+				5FD21BBB16938BBE00F65E56 /* Frameworks */,
+				5FD21BBC16938BBE00F65E56 /* Headers */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = blinken;
+			productName = blinken;
+			productReference = 5FD21BBE16938BBE00F65E56 /* libblinken.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		5FD21B741692F16100F65E56 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0450;
+				ORGANIZATIONNAME = "Jordi Guillaumes Pons";
+			};
+			buildConfigurationList = 5FD21B771692F16100F65E56 /* Build configuration list for PBXProject "BlinkenServer" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = 5FD21B721692F16000F65E56;
+			productRefGroup = 5FD21B7E1692F16100F65E56 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				5FD21B7C1692F16100F65E56 /* BlinkenServer */,
+				5FD21B9F16935C1B00F65E56 /* BlinkenTestClient */,
+				5FD21BBD16938BBE00F65E56 /* blinken */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		5FD21B791692F16100F65E56 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5FD21B821692F16100F65E56 /* main.c in Sources */,
+				5FD21B911692F2F200F65E56 /* blinkenserver.c in Sources */,
+				5FD21B931692F77000F65E56 /* logger.c in Sources */,
+				5FD21B9516930BF200F65E56 /* auxfunc.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		5FD21B9C16935C1B00F65E56 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5FD21BAB1693619800F65E56 /* auxfunc.c in Sources */,
+				5FD3A09116A0A345009B75D1 /* BlinkenTestClient.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		5FD21BBA16938BBE00F65E56 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5FD3A07716A08FFE009B75D1 /* blinkenudp.c in Sources */,
+				5FD3A07A16A09D33009B75D1 /* blinkenserial.c in Sources */,
+				5FEEB0EA16A1E99B006E4297 /* blinkenclient.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		5FD21B851692F16100F65E56 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.8;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		5FD21B861692F16100F65E56 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.8;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		5FD21B881692F16100F65E56 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		5FD21B891692F16100F65E56 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+		5FD21BA816935C1C00F65E56 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		5FD21BA916935C1C00F65E56 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+		5FD21BC016938BBE00F65E56 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				EXECUTABLE_PREFIX = lib;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				RUN_CLANG_STATIC_ANALYZER = YES;
+				SCAN_ALL_SOURCE_FILES_FOR_INCLUDES = YES;
+			};
+			name = Debug;
+		};
+		5FD21BC116938BBE00F65E56 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				EXECUTABLE_PREFIX = lib;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				RUN_CLANG_STATIC_ANALYZER = YES;
+				SCAN_ALL_SOURCE_FILES_FOR_INCLUDES = YES;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		5FD21B771692F16100F65E56 /* Build configuration list for PBXProject "BlinkenServer" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5FD21B851692F16100F65E56 /* Debug */,
+				5FD21B861692F16100F65E56 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		5FD21B871692F16100F65E56 /* Build configuration list for PBXNativeTarget "BlinkenServer" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5FD21B881692F16100F65E56 /* Debug */,
+				5FD21B891692F16100F65E56 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		5FD21BA716935C1C00F65E56 /* Build configuration list for PBXNativeTarget "BlinkenTestClient" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5FD21BA816935C1C00F65E56 /* Debug */,
+				5FD21BA916935C1C00F65E56 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		5FD21BBF16938BBE00F65E56 /* Build configuration list for PBXNativeTarget "blinken" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5FD21BC016938BBE00F65E56 /* Debug */,
+				5FD21BC116938BBE00F65E56 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 5FD21B741692F16100F65E56 /* Project object */;
+}
