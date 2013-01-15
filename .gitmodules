@@ -1,0 +1,3 @@
+[submodule "BlinkenServer"]
+	path = BlinkenServer
+	url = /Users/jguillaumes/Documents/ProjectesXCode/BlinkenServer
