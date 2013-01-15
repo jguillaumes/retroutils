@@ -26,17 +26,16 @@
 
 static unsigned char oldBits[32];
 
-
 int parity(unsigned short n) {
-  unsigned short w;
-  int i=0, ones=0;
-
-  w = n;
-  for (i=0; i<16; i++) {
-    ones += w % 2;
-    w /= 2;
-  }
-  return ones % 2;
+    unsigned short w;
+    int i=0, ones=0;
+    
+    w = n;
+    for (i=0; i<16; i++) {
+        ones += w % 2;
+        w /= 2;
+    }
+    return ones % 2;
 }
 
 
@@ -45,18 +44,18 @@ int startup(WORD numPort, int timeoutmilis) {
     struct protoent *udpproto;
     struct timeval timeout;
     struct sockaddr_in address;
-
+    
     memset(oldBits, 0, sizeof(oldBits));
     
 #ifdef HAS_BLINKEN
     if (wiringPiSetupSys() < 0) {
-      syslog(LOG_ERR, "Error setting up wiringPi (%m)");
-      return -1;
+        syslog(LOG_ERR, "Error setting up wiringPi (%m)");
+        return -1;
     }
     pinMode(CLOCK,OUTPUT);
     pinMode(LATCH,OUTPUT);
     pinMode(DATA,OUTPUT);
-
+    
 #else
 #warning Compiling without real Blinken Lights...
 #endif
@@ -74,7 +73,7 @@ int startup(WORD numPort, int timeoutmilis) {
 #ifdef OSX
                 address.sin_len = sizeof(address);
 #endif
-
+                
                 if (bind(udpsock, (struct sockaddr *) &address, sizeof(address)) != -1) {
                     return udpsock;
                 } else {
@@ -114,6 +113,9 @@ int getPacket(int socket, PBLKPACKET packet, PMYSTATE state) {
         }
         return -1;
     } else {
+        packet->flags    = ntohs(packet->flags);
+        packet->function = ntohs(packet->function);
+        packet->sequence = ntohl(packet->sequence);
         state->received++;
         if (inaddr.sin_addr.s_addr == state->partner.sin_addr.s_addr) {
             dotip(inaddr.sin_addr.s_addr, ipaddress, sizeof(ipaddress));
@@ -139,49 +141,55 @@ int getPacket(int socket, PBLKPACKET packet, PMYSTATE state) {
 }
 
 void setBlinken(PPAYLOAD payload) {
-  int i=0;
-  int indicators = 0;
-  int par = 0;
+    int i=0;
 #ifdef HAS_BLINKEN
-  
-  digitalWrite(LATCH,LOW);
-  if (payload->bflags & BLF_TEST) {
-    for (i=0; i<payload->numBytes; i++) {
-      shiftOut(DATA,CLOCK,MSBFIRST, 0xFF);
-    }
-  } else {
-    if (payload->bflags & BLF_ERROR) {
-      indicators = 0x02;
+    int indicators = 0;
+    int par = 0;
+    
+    payload->numDataBytes  = ntohs(payload->numDataBytes);
+    payload->numAddrBytes  = ntohs(payload->numAddrBytes);
+    payload->numOtherBytes = ntohs(payload->numOtherBytes);
+    payload->bflags        = ntohs(payload->bflags);
+    
+    digitalWrite(LATCH,LOW);
+    if (payload->bflags & BLF_TEST) {
+        for (i=0; i<payload->numDataBytes; i++) {
+            shiftOut(DATA,CLOCK,MSBFIRST, 0xFF);
+        }
     } else {
-      for (i=0; i< payload->numBytes; i++) {
-	oldBits[i] = payload->data[i];
-	par += parity(payload->data[i]);
-      }
-      if (payload->bflags & BLF_NOPARITY) {
-	indicators = 0;
-      } else {
-	indicators = (par % 2) & 0x0001;
-      }
-      shiftOut(DATA,CLOCK,MSBFIRST,indicators);
-      for (i=0; i<payload->numBytes; i++) {
-	shiftOut(DATA,CLOCK,MSBFIRST,oldBits[i]);
-      }
+        if (payload->bflags & BLF_ERROR) {
+            indicators = 0x02;
+        } else {
+            for (i=0; i< payload->numDataBytes; i++) {
+                oldBits[i] = payload->data[i];
+                par += parity(payload->data[i]);
+            }
+            if (payload->bflags & BLF_NOPARITY) {
+                indicators = 0;
+            } else {
+                indicators = (par % 2) & 0x0001;
+            }
+            shiftOut(DATA,CLOCK,MSBFIRST,indicators);
+            for (i=0; i<payload->numDataBytes; i++) {
+                shiftOut(DATA,CLOCK,MSBFIRST,oldBits[i]);
+            }
+        }
+        digitalWrite(LATCH,HIGH);
     }
-    digitalWrite(LATCH,HIGH);
-  }
 #else
-  char binbuf[9];
-  char linelog[256];
-  int endstr = 0;
-  
-  memset(linelog, 0 , sizeof(linelog));
-  sprintf(linelog, "Got lights packet for %d lights ", payload->numBytes * 8);
-  for(i=0;i<payload->numBytes;i++) {
-    dobinary(payload->data[i], binbuf, sizeof(binbuf));
-    strcat(linelog, binbuf);
-  }
-  syslog(LOG_DEBUG, "%s", linelog);
-  printf("%s\n", linelog);
+
+    char binbuf[9];
+    char linelog[256];
+    int endstr = 0;
+    
+    memset(linelog, 0 , sizeof(linelog));
+    sprintf(linelog, "Got lights packet for %d lights ", payload->numDataBytes * 8);
+    for(i=0;i<payload->numDataBytes;i++) {
+        dobinary(payload->data[i], binbuf, sizeof(binbuf));
+        strcat(linelog, binbuf);
+    }
+    syslog(LOG_DEBUG, "%s", linelog);
+    printf("%s\n", linelog);
 #endif
 }
 

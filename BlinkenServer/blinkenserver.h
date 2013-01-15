@@ -31,22 +31,24 @@ typedef unsigned int LONGWORD;
 
 #define DEF_PORT    11696
 
+#pragma pack(2)
 struct s_payload {
-  WORD          bflags;
-  WORD          numBytes;
-  BYTE          data[32];
+    WORD          bflags;
+    WORD          numDataBytes;
+    WORD          numAddrBytes;
+    WORD          numOtherBytes;
+    BYTE          data[16];
 };
 
 typedef struct s_payload PAYLOAD;
 typedef struct s_payload *PPAYLOAD;
 
 struct s_blkpacket {
-  BYTE        function;
-  BYTE        flags;
-  LONGWORD    sequence;
-  struct s_payload payload;
+    WORD        function;
+    WORD        flags;
+    LONGWORD    sequence;
+    struct s_payload payload;
 };
-
 typedef struct s_blkpacket BLKPACKET;
 typedef struct s_blkpacket *PBLKPACKET;
 

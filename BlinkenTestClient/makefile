@@ -1,15 +1,15 @@
-PROGRAM=BlinkenServer
+PROGRAM=BlinkenTestClient
 CC=cc
 CFLAGS=
-LDFLAGS=
+LDFLAGS=-lblinken -L../BlinkenClient
 
 C_FILES := $(wildcard *.c)
 OBJS := $(patsubst %.c, %.o, $(C_FILES))
 
 ALL :	depend $(PROGRAM)
 
-$(PROGRAM):	.depend $(OBJS)
-	$(CC) $(CFLAGS) $(OBJS) $(LDFLAGS) -o $(PROGRAM)
+$(PROGRAM):	.depend $(OBJS) ../BlinkenClient/libblinken.a
+	$(CC) $(CFLAGS) $(OBJS) $(LDFLAGS) -o $(PROGRAM) 
 
 depend: .depend
  
@@ -24,9 +24,10 @@ depend: .depend
 clean:	
 	rm -f .depend *.o
 
-install: $(PROGRAM)
+install: $(PROGRAM)             
 	install -d -g wheel -o root -v $(INSTALL_ROOT)/bin
 	install -b -C -v -o root $(PROGRAM) $(INSTALL_ROOT)/bin
-
+ 
 .PHONY:	clean depend install
+
 
