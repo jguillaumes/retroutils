@@ -37,9 +37,9 @@ import javax.swing.Timer;
  * 
  * - 1 byte of command code. Right this field is disregarded.
  * - 1 byte of packet flags:
- *   * 0x01 indicates the server it has to disregard the sequence number and
+ *   * 0x0001 indicates the server it has to disregard the sequence number and
  *          take whatever comes in this packet.
- *   * 0x02 indicates the server it has to "unbound" itself from the current
+ *   * 0x0002 indicates the server it has to "unbound" itself from the current
  *          client (this is not yet implemented).
  * - 4 bytes of sequence number. The server discards any packets which come
  *     out of order.
@@ -59,6 +59,9 @@ import javax.swing.Timer;
  */
 public class JBlinkenServer {
 
+    /*
+     * Constants for flags and status codes
+     */
     private static final short FLG_RESYNC = 0x01;
     private static final short FLG_DETACH = 0x02;
     public static final short BLF_NOPARITY = 0x0001;
@@ -66,17 +69,24 @@ public class JBlinkenServer {
     public static final short BLF_TEST = 0x0004;
     private static final int BLS_DEFAULT_PORT = 11696;
     private static final int BLS_DEFAULT_TIMEOUT = 10000;
+    
+    /*
+     * GUI panel and UDP listener thread handler
+     */
     private JBlinkenPanel jbp = null;
     private JbsUdpListener jbudp = null;
-    private int currentPort = BLS_DEFAULT_PORT;
     
-        private long received = 0;
-        private long outOfOrder = 0;
-        private long nonBound = 0;
-        private long timeOuts = 0;
-        private long numSkipped = 0;
-        private long oldsequence = 0;
-        
+    /*
+     * Counters
+     */
+    private int currentPort = BLS_DEFAULT_PORT;
+    private long received = 0;
+    private long outOfOrder = 0;
+    private long nonBound = 0;
+    private long timeOuts = 0;
+    private long numSkipped = 0;
+    private long oldsequence = 0;
+
     /**
      * Non-static running procedure. 
      * Called my main()
@@ -87,7 +97,7 @@ public class JBlinkenServer {
 
         jbp = new JBlinkenPanel();                      // Create the GUI
         jbp.addWindowListener(new WindowAdapter() {     // Add close listener
-
+            
             @Override
             public void windowClosed(WindowEvent we) {
                 System.out.println("Shutting down...");
@@ -136,7 +146,7 @@ public class JBlinkenServer {
             }
         });
 
-        jbp.zeroBT.addActionListener(new ActionListener() {
+        jbp.zeroBT.addActionListener(new ActionListener() {     // Zero counters button
 
             @Override
             public void actionPerformed(ActionEvent ae) {
@@ -147,7 +157,7 @@ public class JBlinkenServer {
                 numSkipped = 0;
             }
         });
-                
+
         jbp.udpPortFTF.addActionListener(new ActionListener() { // UDP port change
 
             @Override
@@ -185,7 +195,7 @@ public class JBlinkenServer {
 
     /**
      * Static main procedure
-     * @param args the command line arguments
+     * @param args the command line arguments (ignored)
      */
     public static void main(String[] args) {
         final JBlinkenServer jbs = new JBlinkenServer();
@@ -194,7 +204,7 @@ public class JBlinkenServer {
 
     /**
      * Light error led
-     * @param err 
+     * @param err turn on the LED if true, turn it off if false
      */
     private void setError(boolean err) {
         if (err) {
@@ -265,7 +275,6 @@ public class JBlinkenServer {
         private DatagramSocket socket = null;
         private int timeOut = BLS_DEFAULT_TIMEOUT;
 
-        
         /**
          * Public constructor
          * @param port UDP port to listen on
@@ -304,7 +313,8 @@ public class JBlinkenServer {
         }
 
         /**
-         * Main thread procedure
+         * Main thread procedure. It runs until the toExit boolean is set
+         * to true
          */
         @Override
         public void run() {
@@ -324,12 +334,15 @@ public class JBlinkenServer {
 
                 socket = openSocket();
                 DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
-                timer.start();
+                timer.start();          // Start stats update timer
                 while (!toExit) {
                     try {
                         socket.receive(packet);
                         received++;
                         usePacket = false;
+                        // Get the different fields from the datagram
+                        // Java always uses network order, so no need to 
+                        // mangle the bytes...
                         is = new DataInputStream(new ByteArrayInputStream(packet.getData()));
                         function = is.readShort();
                         flags = is.readShort();
@@ -338,43 +351,45 @@ public class JBlinkenServer {
                         numDataBytes = is.readUnsignedShort();
                         numAddrBytes = is.readUnsignedShort();
                         numOtherBytes = is.readUnsignedShort();
+                        /*
+                         * If we are already paired (bound) to a client, check
+                         * if the packet comes from that host
+                         */
                         if (pair != null) {
                             if (pair.equals(packet.getAddress())) {
-                                if (sequence > oldsequence) {
-                                    oldsequence = sequence;
-                                    usePacket = true;
+                                if (sequence > oldsequence) {   // OK, use packet
+                                    usePacket = true;       
                                 } else if ((flags & FLG_RESYNC) != 0) {
-                                    oldsequence = sequence;
-                                    usePacket = true;
-                                } else {
-                                    outOfOrder++;
+                                    usePacket = true;           // Sequence not OK, but
+                                } else {                        // resync requested
+                                    outOfOrder++;               // No resync, packet out-of-order => ignored
                                     System.err.println("Packet out of sequence " + sequence + " vs " + oldsequence);
                                 }
-                            } else {
-                                    System.err.println("Packet from non-bound source " + 
-                                            packet.getAddress() + " (bound address is " + pair + ")");
-                                    usePacket = false;
-                                    nonBound++;
+                            } else {                            // NOK, packet from non-bound source
+                                System.err.println("Packet from non-bound source "
+                                        + packet.getAddress() + " (bound address is " + pair + ")");
+                                usePacket = false;
+                                nonBound++;
                             }
                         } else {
-                            pair = packet.getAddress();
-                            jbp.statusLabel.setText("Running, bound to " + pair.getHostAddress());                           
+                            pair = packet.getAddress();         // We are not yet paired, so we will do it now
+                            jbp.statusLabel.setText("Running, bound to " + pair.getHostAddress());
                             usePacket = true;
                         }
                         if (usePacket) {
-                            if (sequence - oldsequence > 1) {
+                            if (sequence - oldsequence > 1) {   // Check if we skipped packets
                                 numSkipped += (sequence - oldsequence - 1);
                             }
                             oldsequence = sequence;
 
-                            if (numDataBytes != 2) {
+                            if (numDataBytes != 2) {            // Check packet payload
                                 System.out.println("Wrong packet received, unsupported " + numDataBytes + " bytes packet.");
-                            } else {
+                            } else {    
                                 int theNum = is.readUnsignedShort();
-                                setLights(bflags, theNum);
+                                setLights(bflags, theNum);      // update the LEDs!
                             }
                         }
-                    } catch (SocketTimeoutException ste) {
+                    } catch (SocketTimeoutException ste) {      // Timeout. If we are bound, unbind
                         if (pair != null) {
                             System.out.println("Timeout reading packet, unbinding");
                             jbp.statusLabel.setText("Running, unbound");
@@ -387,6 +402,10 @@ public class JBlinkenServer {
                         throw new RuntimeException(ex);
                     }
                 }
+                /*
+                 * End of process: stop stats update timer
+                 * and clean up
+                 */
                 timer.stop();
                 timer = null;
                 socket.close();
@@ -398,6 +417,11 @@ public class JBlinkenServer {
             }
         }
 
+        /**
+         * Update timer action. Update the GUI with the current value
+         * of the counters.
+         * @param ae  Event. Ignored.
+         */
         @Override
         public void actionPerformed(ActionEvent ae) {
             NumberFormat nf = NumberFormat.getNumberInstance();

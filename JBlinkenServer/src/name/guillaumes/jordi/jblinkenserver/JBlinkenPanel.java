@@ -1,11 +1,6 @@
 /*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
-/*
  * JBlinkenPanel.java
- *
+ * GUI for the virtual blinkenlights.
  * Created on 09/01/2013, 20:24:31
  */
 package name.guillaumes.jordi.jblinkenserver;
@@ -16,13 +11,26 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 /**
- *
+ * GUI panel for the virtual blinkenlights
+ * This panel shows a 16-bit LED "blinkenlights" corresponding to the "data"
+ * row of the classic PDP11 consoles. It has also two more lights: an amber
+ * light showing the parity of the data, and a red light to signal error
+ * conditions (ie, the console registers specify an incorrect data source).
+ * 
+ * This is a "dumb" GUI. All the wiring and the action is performed by the
+ * owner class (JBlinkenServer().
+ * 
  * @author jguillaumes
  */
 public class JBlinkenPanel extends javax.swing.JFrame {
     private static final String hexdig="0123456789ABCDEF";
     
     
+    /**
+     * Builds a small JLabel to be shown near a LED corresponding to a bit
+     * @param text Text to show
+     * @return a ready-to-show JLabel with the correct dimensions
+     */
     private JLabel makeBitLabel(String text) {
         JLabel lbl = new JLabel();
         lbl.setText(text);
@@ -34,18 +42,22 @@ public class JBlinkenPanel extends javax.swing.JFrame {
         return lbl;
     }
     
-    /** Creates new form JBlinkenPanel */
+    /** 
+     * Creates new form JBlinkenPanel 
+     * The built panel is ready to be shown and has all the "LEDS" and labels
+     * on place.
+     */
     public JBlinkenPanel() {
 
         initComponents();
         
+        // Initialize icons for turned on and off leds (green, red, orange and black)
         iconRed     = new ImageIcon(getClass().getResource("/resources/Red.png"));
         iconGreen   = new ImageIcon(getClass().getResource("/resources/Green.png"));
         iconOrange  = new ImageIcon(getClass().getResource("/resources/Orange.png"));
         iconBlack   = new ImageIcon(getClass().getResource("/resources/Black.png"));
 
-        // ((FlowLayout) ledPanel.getLayout()).setHgap(5);
-        
+        // Set up the error and parity LEDs and add them to the apropriate subpanel
         errorLabel.setIcon(iconBlack);
         parityLabel.setIcon(iconBlack);
         
@@ -54,6 +66,7 @@ public class JBlinkenPanel extends javax.swing.JFrame {
         ledPanel.add(parityLabel);
         labelPanel.add(makeBitLabel("P"));
         
+        // Add a separator between error/parity and the actual data LEDs
         JPanel sepPanel = new JPanel();
         sepPanel.setMinimumSize(new Dimension(15,40));
         JPanel sepPanell = new JPanel();
@@ -61,6 +74,7 @@ public class JBlinkenPanel extends javax.swing.JFrame {
         ledPanel.add(sepPanel);
         labelPanel.add(sepPanell);
         
+        // Build and draw the 16 data LEDs and corresponding labels
         for(int i=15; i>=0; i--) {
             bitsLabel[i] = new JLabel();
             bitsLabel[i].setIcon(iconBlack);
@@ -68,6 +82,7 @@ public class JBlinkenPanel extends javax.swing.JFrame {
             labelPanel.add(makeBitLabel(hexdig.substring(i, i+1)));
         }
         
+        // Adjust size and pack
         statusPanel.setPreferredSize(statusPanel.getMinimumSize());
         pack();
         
