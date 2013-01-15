@@ -1,3 +1,6 @@
 [submodule "BlinkenServer"]
 	path = BlinkenServer
 	url = /Users/jguillaumes/Documents/ProjectesXCode/BlinkenServer
+[submodule "simh-patches"]
+	path = simh-patches
+	url = /Users/jguillaumes/simh-patches
