@@ -26,8 +26,8 @@ clean:
 	rm -f .depend *.o
  
 install: libblinken.a $(HEADERS)
-	install -d -g wheel -o root -v $(INSTALL_ROOT)/include
-	install -d -g wheel -o root -v $(INSTALL_ROOT)/lib
+	install -d -g root -o root -v $(INSTALL_ROOT)/include
+	install -d -g root -o root -v $(INSTALL_ROOT)/lib
 	install -b -C -v -o root libblinken.a $(INSTALL_ROOT)/lib
 	install -b -C -v -o root $(HEADERS) $(INSTALL_ROOT)/include
 

@@ -25,7 +25,7 @@ clean:
 	rm -f .depend *.o
 
 install: $(PROGRAM)
-	install -d -g wheel -o root -v $(INSTALL_ROOT)/bin
+	install -d -g root -o root -v $(INSTALL_ROOT)/bin
 	install -b -C -v -o root $(PROGRAM) $(INSTALL_ROOT)/bin
 
 .PHONY:	clean depend install
