@@ -16,9 +16,9 @@ typedef unsigned short WORD;
 typedef unsigned int LONGWORD;
 
 #ifdef HAS_BLINKEN
-#define CLOCK 17
-#define LATCH 18
-#define DATA  27
+#define SPIBUS   0
+#define LATCH    8
+#define SPISPEED 1000000
 #endif
 
 

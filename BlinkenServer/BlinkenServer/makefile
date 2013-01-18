@@ -3,6 +3,12 @@ CC=cc
 CFLAGS=
 LDFLAGS=
 
+ifdef	HAS_BLINKEN
+	CFLAGS := -DHAS_BLINKEN=$(HAS_BLINKEN)
+	LDFLAGS := -lwiringPi
+endif
+
+
 C_FILES := $(wildcard *.c)
 OBJS := $(patsubst %.c, %.o, $(C_FILES))
 
