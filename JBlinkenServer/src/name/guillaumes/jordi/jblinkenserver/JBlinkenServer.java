@@ -1,7 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package name.guillaumes.jordi.jblinkenserver;
 
 import java.awt.event.ActionEvent;
@@ -35,8 +31,8 @@ import javax.swing.Timer;
  * The packet format is the same which is used by the "hardware" implementation
  * of the blinken lights console. That is:
  * 
- * - 1 byte of command code. Right this field is disregarded.
- * - 1 byte of packet flags:
+ * - 1 word (16 bits) of command code. Right now this field is disregarded.
+ * - 1 word of packet flags:
  *   * 0x0001 indicates the server it has to disregard the sequence number and
  *          take whatever comes in this packet.
  *   * 0x0002 indicates the server it has to "unbound" itself from the current
@@ -51,7 +47,7 @@ import javax.swing.Timer;
  *              put on ALL the lights (test mode)
  * - 2 bytes indicating the number of bytes of actual lights. Right now it
  *     must be 2 (two).
- * - Up to 32 data bytes (only two are used now).
+ * - Up to 16 data bytes (only two are used now).
  * 
  * All the integer values are in network order (big endian).
  * 
