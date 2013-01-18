@@ -1,7 +1,3 @@
-#include <avr/wdt.h>
-#include <SoftwareSerial.h>
-#include <Wire.h>
-
 /*
  * Payload (bits) flags
  */
@@ -10,6 +6,7 @@
 #define BLF_TEST     0x0004
 #define TTY_SPEED    230400
 #define LED_PIN      13
+#define TEST_BUTTON  2
 
 #define XON   0x11
 #define XOFF  0x13
@@ -33,12 +30,26 @@ long ledstate=0;
 unsigned char val[16];
 unsigned char err[3];
 struct s_payload *payload;
+int testMode = 0;
+
+/*
+* Interrupt routine to handle the "press to test" button
+ */
+void buttonAction() {
+  if (digitalRead(TEST_BUTTON) == LOW) {
+    testMode = 1;
+  } else {
+    testMode = 0;
+  }  
+}
 
 unsigned short ntohs(unsigned short input) {
   return word(lowByte(input), highByte(input));
 }
 
-
+/*
+** Turn on the LEDs according to a byte array
+ */
 void liteDataBytes(int stat, int numBytes, unsigned char *v) {
   unsigned char *ptr = v;
 
@@ -50,6 +61,9 @@ void liteDataBytes(int stat, int numBytes, unsigned char *v) {
   digitalWrite(LATCH,HIGH);
 }
 
+/*
+** Compute the parity for a character
+ */
 int parity(unsigned char c) {
   int p=0;
   int w=c;
@@ -61,6 +75,9 @@ int parity(unsigned char c) {
   return p % 2;
 }
 
+/*
+** Compute the parity for an array of bytes
+ */
 unsigned int blockParity(int n, unsigned char *v) {
   unsigned char *ptr=v;
   unsigned char p=0;
@@ -72,13 +89,18 @@ unsigned int blockParity(int n, unsigned char *v) {
   return p % 2;
 }
 
+/*
+** Setup the arduino board
+ */
 void setup() {
   pinMode(LED_PIN,OUTPUT);
   pinMode(DATA,OUTPUT);
   pinMode(CLOCK,OUTPUT);
   pinMode(LATCH,OUTPUT);
+  pinMode(TEST_BUTTON,INPUT_PULLUP);
   Serial.begin(TTY_SPEED);
   Serial.setTimeout(5000);
+  attachInterrupt(1, buttonAction, CHANGE);
   for(int i=0; i<16; i++) {
     val[i] = 0;
   }
@@ -87,23 +109,32 @@ void setup() {
   err[2] = 255;
 }
 
+/*
+** Main loop
+ */
 void loop() {
   unsigned char inp[sizeof(struct s_payload)];
-      blinkLed();
+  blinkLed();    // "I'm alive" heartbeat
 
   while(Serial.available() > 0) {
     Serial.readBytes((char *)inp, sizeof(struct s_payload));
-    payload = (struct s_payload *) &inp;
-    processPayload();
+    if (testMode == 0) {
+      payload = (struct s_payload *) &inp;
+      processPayload();
+    } 
+    else {
+      liteDataBytes(255,2,err);
+    } 
   }
 }
+
 
 void processPayload() {
   unsigned int f=0,p=0,w=0;
   unsigned char *dataArray  = NULL;
   unsigned char *addrArray  = NULL;
   unsigned char *otherArray = NULL;
-  
+
   payload->bFlags        = ntohs(payload->bFlags);    
   payload->numDataBytes  = ntohs(payload->numDataBytes);
   payload->numAddrBytes  = ntohs(payload->numAddrBytes);
@@ -139,18 +170,20 @@ void processPayload() {
   }
 }
 
+/*
+** Heartbeat in on-board LED
+ */
 void blinkLed() {
-  if (ledstate < 100000) {
+  if (ledstate < 50000) {
     digitalWrite(LED_PIN,HIGH);
     ledstate++;
   } 
   else {
     digitalWrite(LED_PIN,LOW);
     ledstate++;
-    if (ledstate > 200000) ledstate = 0;
+    if (ledstate > 100000) ledstate = 0;
   }
 }
-
 
 
 
