@@ -1,0 +1,1391 @@
+/*
+**++
+**  FACILITY:  GURIPA
+**
+**  MODULE DESCRIPTION:
+**
+**      Detect and kill idle interactive terminal sessions
+**
+**  AUTHORS:
+**
+**      Jordi Guillaumes Pons	
+**
+**  CREATION DATE:     19.04.2013
+**
+**  DESIGN ISSUES:
+**
+**      This program is intended to run as a detached process. It will
+**	check at each "checktime" seconds if the interactive processes present
+**	have consumed any CPU or DIO. The BIO count is also mantained but
+**	not used to check process activity .The resource usage is accumulated
+**	at job level. When a job has not consumed any resources in 
+**	"msg_idlecount" checktimes, it will get a broadcast message. When
+**	the job has not consumed any resources in "max_idlecount" checktimes
+**	it will be deleted. The SYSTEM jobs are excluded from the control.
+**
+**	The program listens to commands using a permanent mailbox bound to the
+**	logical name GURIPA_MBX. The messages received in that mailbox
+**	are processed in the AST routine GURIPA_AST, included in this
+**	source. That routine is at level 0 at the module, so the communication
+**	with the main program is done using globaldef/globalref variables.
+**  
+**	The initial values for "checktime", "max_idlecount" and "msg_idlecount"
+**	are obtained from the logical names GURIPA_checktime,
+**	GURIPA_MAXIDLECOUNT and GURIPA_MSGIDLECOUNT. These logicals are 
+**	optional; if they are not defined the default values are 300, 12 and 11
+**	corresponding to an checktime of 5 minutes, a kill time of an hour
+**	and a warning time of 55 minutes. If the logicals are used they
+**	MUST be defined in the table GURIPA_LNM, which in turn MUST be
+**	placed in LNM$SYSTEM_DIRECTORY (else the program won't find
+**	the table because it will probably run as a detached process). Once
+**	the process has started it will wait for 5 seconds for a 'STRT' command
+**	sent thru the mailbox. If that command is received it might set up
+**	different values for the checktime and maximum checktimes parameters.
+**	This is done to support the specific assignment of values using
+**	the GURIPA/START DCL command (see GURIPA_CTL.PLI).
+**
+**  INCLUDED FILES:
+**   
+**  	GURIPA.INC	Contains preprocessor macros and constants.
+**	GURIPA_CMD.INC	Contains the message structure for MBX communication
+**   
+**  FILES USED:
+**   
+**  	LOGFILE:	Text log file for messages, timestamps and other output
+**   
+**  VERSION:
+**   
+**  	V01.03
+**   
+**
+**  MODIFICATION HISTORY:
+**
+**      V01.01 29.04.2013   The count of buffered IO (BIO) is no longer taken
+**			    into account, because the warning message can
+**			    increase biocnt, preventing a process from being
+**			    killed.
+**	V01.02 30.04.2013   Pass address of shared variables to AST 
+**			    routine via pointer instead of globaldef/ref
+**	V01.03 30.04.2013   Supressed LIB$WAIT for the SRTR command to avoid
+**			    having two WAKE requests running (and hence 
+**			    making the process to wake up more than intended).
+**	[tbs]...
+**--
+**/
+
+%INCLUDE 'GURIPA.INC';
+ 
+/*
+[procedure_level_comments]
+**/
+GURIPA: procedure options(main, ident('V01.01')) returns(bin fixed(31));
+
+%INCLUDE 'GURIPA_CMD.INC';
+%INCLUDE SYS$GETJPI;	    /* Get Job and Process information */
+%INCLUDE SYS$TRNLNM;	    /* Translate logical               */
+%INCLUDE SYS$BRDCST;	    /* Broadcast (send message)        */
+%INCLUDE SYS$DELPRC;	    /* Delete (Kill) Process           */
+%INCLUDE SYS$SNDOPR;	    /* Send to operator                */
+%INCLUDE SYS$CREMBX;
+%INCLUDE SYS$DELMBX;
+%INCLUDE SYS$QIO;
+%INCLUDE SYS$SETAST;
+%INCLUDE LIB$SYS_GETMSG;
+%INCLUDE LIB$SYS_FAO;
+%INCLUDE LIB$SIGNAL;	    /* Signal a condition              */
+%INCLUDE LIB$WAIT;	    /* Hibernate and wait n seconds    */
+%INCLUDE LIB$GETJPI;	    /* Get job/process info (simple)   */
+%INCLUDE OTS$CVT_T_F;	    /* Convert text to float           */
+%INCLUDE OTS$CVT_TU_L;	    /* Convert text to unsigned long   */
+%INCLUDE OTS$CVT_L_TZ;	    /* Convert long to hexadecimal text*/
+%INCLUDE $JPIDEF;
+%INCLUDE $SSDEF;
+%INCLUDE $IODEF;
+%INCLUDE $LNMDEF;
+%INCLUDE $BRDCSTDEF;
+%INCLUDE $OPCDEF;
+
+dcl NULL		builtin;
+dcl ADDR		builtin;
+dcl SUBSTR		builtin;
+dcl TRIM		builtin; 
+dcl FLUSH		builtin;
+
+%dcl num_items		fixed;
+%num_items=11;
+%dcl num_processes	fixed;
+%num_processes=500;
+
+dcl 1 ast_shared		based(areaptr),
+      3 mbx_name		char(10)        init('GURIPA_MBX'),
+      3 mbx_chan		bin fixed(15)   init(0),
+      3 mbx_buffer		char(128)       init(''),
+      3  mbx_iosb,
+         5 iostat		bin fixed(31)   init(0),
+         5 reserved		bin fixed(31)   init(0),
+      3 flags,
+        5 end_program		bit(1)		init('0'b),
+	5 clear_table		bit(1) unal	init('0'b),
+	5 reserved		bit(30) unal,
+      3 checktime		bin float(24)	init(0.0),
+      3 max_idlecount		bin fixed(15)	init(0),
+      3 msg_idlecount		bin fixed(15)	init(0);
+
+dcl areaptr		pointer;
+
+dcl logfile		FILE STREAM OUTPUT;
+dcl 1 cmnd		like guripa_cmd based(addr(mbx_buffer));
+
+dcl (retcode,rc2)	bin fixed(31) init(SS$_NORMAL);
+
+dcl pid_to_get		bin fixed(31) init(-1);
+dcl i			bin fixed(15) init(0);
+
+dcl 1 item_entry	based,
+      3 bufflen		bin fixed(15),
+      3 itemcode	bin fixed(15),
+      3 buffaddr	pointer,
+      3 retlen		pointer;
+
+dcl 1 itemlist,
+      3 item(num_items)	like item_entry,
+      3 endlist,
+	5 zeros(2)	bin fixed(31) init((2)0);
+
+dcl 1 process_entry	based,
+      3 pid		bin fixed(31),
+      3 owner		bin fixed(31),
+      3 name		char(15),
+      3 user		char(12),
+      3 terminal	char(8),
+      3 owneridx	bin fixed(15),
+      3 idlecount	bin fixed(15),
+      3 cputime		bin fixed(31),
+      3 cputime_s	bin fixed(31),
+      3 diocnt		bin fixed(31),
+      3 diocnt_s	bin fixed(31),
+      3 biocnt		bin fixed(31),
+      3 biocnt_s	bin fixed(31);
+
+dcl 1 processlist,
+    3 process(num_processes) like process_entry;
+
+dcl 1 processlist_ant,
+    3 process_ant(num_processes) like process_entry;
+
+
+dcl control_flags	bin fixed(31) init(0);
+dcl control_flags_l	bin fixed(31) init(0);
+dcl process_name	char(15)      init('');
+dcl process_name_l	bin fixed(31) init(0);
+dcl process_user	char(12)      init('');
+dcl process_user_l	bin fixed(31) init(0);
+dcl process_terminal	char(8)	      init('');
+dcl process_terminal_l	bin fixed(31) init(0);
+dcl process_owner       bin fixed(31) init(0);
+dcl process_pid         bin fixed(31) init(0);
+dcl process_cputime     bin fixed(31) init(0);
+dcl process_diocnt      bin fixed(31) init(0);
+dcl process_biocnt      bin fixed(31) init(0);
+dcl process_jobtype	bin fixed(31) init(0);
+dcl process_state	bin fixed(31) init(0);
+
+dcl end_flag		bit(1)	      init('0'b);
+
+
+/* Values taken from $STATEDEF (in SYS$LIBRARY:LIB.MLB)
+
+	.MACRO	$STATEDEF,$GBL
+	$DEFINI	STATE,$GBL
+$EQU	SCH$C_COLPG	1
+$EQU	SCH$C_MWAIT	2
+$EQU	SCH$C_CEF	3
+$EQU	SCH$C_PFW	4
+$EQU	SCH$C_LEF	5
+$EQU	SCH$C_LEFO	6
+$EQU	SCH$C_HIB	7
+$EQU	SCH$C_HIBO	8
+$EQU	SCH$C_SUSP	9
+$EQU	SCH$C_SUSPO	10
+$EQU	SCH$C_FPG	11
+$EQU	SCH$C_COM	12
+$EQU	SCH$C_COMO	13
+$EQU	SCH$C_CUR	14
+	$DEFEND	STATE,$GBL,DEF
+	.ENDM
+--- */
+
+
+dcl SCH$C_HIB		bin fixed(31) static init(7);
+dcl SCH$C_HIBO		bin fixed(31) static init(8);
+dcl SCH$C_SUSP		bin fixed(31) static init(9);
+dcl SCH$C_SUSPO		bin fixed(31) static init(10);
+
+/*
+on error begin;
+   on error system;
+   goto end_process;
+end;    
+
+on finish begin;
+    close file(logfile);
+    if mbx_chan ^= 0 then do;
+	rc2 = SYS$DELMBX(mbx_chan);	
+    end;
+end;
+*/  
+    allocate ast_shared set(areaptr);	
+    ast_shared.checktime = 0;
+    ast_shared.max_idlecount = 0;
+    ast_shared.msg_idlecount = 0;    
+
+    checktime     = get_checktime();
+    max_idlecount = get_idlecount();
+    msg_idlecount = get_msgidlecount();
+    if msg_idlecount = 0 then msg_idlecount = max_idlecount - 1;
+
+    call empty_table();
+
+    open file(logfile) output 
+	 title('GURIPA_LOG') 
+	 environment(default_file_name('.LOG'), shared_read,
+		     deferred_write('0'b));
+    call setup_mbx();
+    call read_mbx();
+
+    rc2 = LIB$WAIT(5.0); 	/* Wait 5 seconds for STRT command */
+       
+    put file(logfile)
+	edit(get_message(GUR_STRTUP,0,''))
+	    (skip,a);
+
+main_loop:
+    do while(^end_program);
+    	put file(logfile)
+	    edit(get_message(GUR_TSTAMP,0,''))
+	    	(skip,a);
+
+	call initialize();
+
+	rc2 = sys$setast ('0'b);	    /* Disable ASTs */
+	end_flag = '0'b;
+	call get_a_process;
+	do while(^end_flag);
+	    if (process_jobtype = JPI$K_LOCAL  |
+		process_jobtype = JPI$K_DIALUP)  & 
+	       (process_state ^= SCH$C_SUSP &
+		process_state ^= SCH$C_SUSPO) &
+	       (substr(process_user,1,6) ^= 'SYSTEM') 
+	    then do;
+		call accumulate_process(process_pid, process_name,
+			    process_user, process_owner, process_terminal, 
+			    process_cputime,
+			    process_diocnt, process_biocnt);
+	    end;
+	    call get_a_process;
+	end;
+	if (retcode = SS$_NOMOREPROC) then retcode = SS$_NORMAL;
+	call check_processes();
+	call FLUSH(logfile);
+	rc2 = SYS$SETAST('1'b);	    /* Reenable ASTs */
+	retcode = lib$wait (checktime);
+	if ISFAILURE(retcode) then call LIB$SIGNAL(retcode);
+    end;
+
+    put file(logfile)
+	edit(get_message(GUR_EXIT,0,''))
+	    (skip,a);
+
+/*
+**++
+**  FUNCTIONAL DESCRIPTION:
+**
+**      Get next process
+**
+**  FORMAL PARAMETERS:
+**
+**      None
+**
+**  RETURN VALUE:
+**
+**      None
+**
+**  SIDE EFFECTS:
+**
+**      Uses $GETJPI to get the next process information and stores relevant
+**	data in the process_xxxx variables. It also raises bit end_flag when
+**	there are no more processes to get.
+**
+**  DESIGN:
+**
+**      This procedure uses the "browsing" capability of $GETJPI, invoking
+**	the system service with a -1 value for the PID.  
+**
+**  CLIENT OBLIGATIONS:
+**   
+**  	The caller must check the bit end_flag to know when there are no more
+**	processes to read.
+**   
+**
+**
+**--
+**/
+
+get_a_process: proc;
+    retcode = sys$getjpiw (, pid_to_get,,itemlist,,,);
+    if retcode = SS$_NOMOREPROC then 
+	end_flag = '1'b;
+    else do;
+	if ISFAILURE(retcode) then signal error;
+	process_name = substr(process_name,1,process_name_l);
+	process_user = substr(process_user,1,process_user_l);
+	process_terminal = substr(process_terminal,1,process_terminal_l);
+    end;   
+end get_a_process;
+
+/*
+[procedure_level_comments]
+**/
+check_processes: procedure;
+    dcl i	bin fixed(15)	init(0);
+    dcl rc	bin fixed(31)	init(0);
+    dcl wprcnam	char(15)	init('');
+    dcl wcpu	bin fixed(31)	init(0),
+	wdio	bin fixed(31)	init(0),
+	wbio	bin fixed(31)	init(0),
+	wcpua	bin fixed(31)	init(0),
+	wdioa	bin fixed(31)	init(0),
+	wbioa	bin fixed(31)	init(0);
+
+    do i=1 to num_processes;
+	if process(i).pid ^= 0 then do;
+	    wcpu = process(i).cputime + process(i).cputime_s;
+	    wdio = process(i).diocnt  + process(i).diocnt_s;
+	    wbio = process(i).biocnt  + process(i).biocnt_s;
+	    wcpua = process_ant(i).cputime + process_ant(i).cputime_s;
+	    wdioa = process_ant(i).diocnt  + process_ant(i).diocnt_s;
+	    wbioa = process_ant(i).biocnt  + process_ant(i).biocnt_s;
+
+	    if wcpu = wcpua & wdio = wdioa /* & wbio = wbioa */
+	    then do;
+		rc = lib$getjpi (
+                     	 JPI$_PRCNAM, 
+                     	 process(i).pid,,, 
+                     	 wprcnam,);
+	        if rc ^= SS$_NORMAL then do;
+		    call remove_process(i);
+		end; 
+		else do;
+		    process(i).idlecount = process(i).idlecount + 1;
+		  
+		    if process(i).idlecount >= max_idlecount &
+		       process(i).owner = 0 
+		    then do;
+			call kill_process(i);
+		    end; else do;
+			if process(i).idlecount >= msg_idlecount &
+			   process(i).owner = 0
+			then do;
+			    call msg_process(i,max_idlecount - 
+					       process(i).idlecount);
+			end;
+		    end;
+  		end;
+	    end; else do;
+		process(i).idlecount = 0;
+	    end;
+	    if process(i).pid ^= 0 then do;
+		process_ant(i) = process(i);
+		put file(logfile) 
+		    edit(hexvalue(process(i).pid), 
+		         hexvalue(process(i).owner),
+			 process(i).name, 
+			 process(i).user,
+		         process(i).cputime,
+			 process(i).diocnt,
+			 process(i).biocnt,
+			 process(i).idlecount)
+		        (skip,a(8),x,a(8),x,a(15),x,a(12),
+			 (3)(x,p'ZZZZZ.ZZ9'),f(3));
+	    end;
+	end;
+    end;
+end check_processes;
+
+ 
+/*
+**++
+**  FUNCTIONAL DESCRIPTION:
+**
+**      Kill (delete) a job, and send a logging message to the operators
+**	console, and to the log file.
+**
+**  FORMAL PARAMETERS:
+**
+**      idx:
+**          Index of the job to be deleted in the internal processes table.
+**      
+**  RETURN VALUE:
+**
+**      None
+**
+**  SIDE EFFECTS:
+**
+**      This process removes a job from the system using the $DELPRC service.
+**
+**  DESIGN:
+**
+**      None
+**
+**--
+**/
+kill_process: procedure (idx);
+    dcl idx	    bin fixed(15);
+    dcl rc	    bin fixed(31) init(SS$_NORMAL);
+    dcl buf_msg	    char(256)     init('');
+    dcl 1 opr_msg		  based(addr(buf_msg)),
+	  3 opc$b_ms_type	  bin fixed(7),
+	  3 opc$b_ms_target	  bit(24),
+	  3 opc$l_ms_rqstid	  bin fixed(31),
+          3 text		  char(160);
+
+    opr_msg.opc$b_ms_type   = OPC$_RQ_RQST;
+    opr_msg.opc$b_ms_target = OPC$M_NM_CENTRL | OPC$M_NM_CLUSTER;
+    opr_msg.opc$l_ms_rqstid = 1;    
+
+    put file(logfile)
+	edit(get_message(GUR_KILLED,process(idx).pid,process(idx).name))
+	    (skip,a);
+	    
+    rc = sys$delprc (process(idx).pid,);
+    if ISSUCCESS(rc) then do;
+	opr_msg.text = get_message(GUR_KILLED,process(idx).pid,
+					      process(idx).name);
+	rc = sys$sndopr (
+             	 buf_msg,);
+    end;
+end kill_process;
+
+/*
+**++
+**  FUNCTIONAL DESCRIPTION:
+**
+**      Send a warning message to an idle process when it has been
+**	inactive for at least msg_idlecount checktimes
+**
+**  FORMAL PARAMETERS:
+**
+**      idx:
+**          Index of the process to be warned in the processes table
+**
+**  RETURN VALUE:
+**
+**      None
+**
+**  SIDE EFFECTS:
+**
+**      None
+**
+**  DESIGN:
+**
+**	It uses the old $BRDCST system service instead of the modern
+**	$BRKTHRU because it is intended to work in all VMS versions down
+**	to 4.7.
+**
+**	The return code of $BRDCST is not checked for errors: if the message
+**	is lost it is no drama.
+**
+**  CLIENT OBLIGATIONS:
+**   
+**  	The process must have OPER privilege to send messages to any
+**	terminal
+**   
+**
+**
+**--
+**/
+msg_process: procedure (idx,remaining);
+    dcl idx	    bin fixed(15);
+    dcl remaining   bin fixed(15);
+    dcl msg	    char(160)      init('');
+    dcl rc	    bin fixed(31) init(SS$_NORMAL);
+
+    put string(msg)
+        edit('Idle process detected. Process ',
+	      process(idx).name,
+	      ' (',
+	      hexvalue(process(idx).pid),
+	      ') will be killed in ',
+	      checktime*remaining,
+	      ' seconds unless action is taken.')
+	     (a,a,a,a,a,f(5,0),a);
+    rc = sys$brdcst (
+             msg, 
+             process(idx).terminal, 
+             BRDCST$V_SCREEN,);
+
+end msg_process;
+
+
+
+/*
+**++
+**  FUNCTIONAL DESCRIPTION:
+**
+**      Find a process (by PID) in the process tables
+**
+**  FORMAL PARAMETERS:
+**
+**      thepid:
+**          PID number of the process to find
+**
+**  RETURN VALUE:
+**
+**      Index of the PID in the process table, or zero if the PID is not
+**	found.
+**
+**  SIDE EFFECTS:
+**
+**      None
+**
+**  DESIGN:
+**
+**
+**--
+**/
+find_process: proc(thepid) returns(bin fixed(15));
+    dcl thepid	bin fixed(31),
+	index   bin fixed(15)   init(0),
+	i	bin fixed(15)   init(0);
+
+    do i=1 to num_processes while(index=0);
+    	if process(i).pid = thepid then index = i; 
+    end;
+
+    return (index);
+end find_process;
+
+/*
+**++
+**  FUNCTIONAL DESCRIPTION:
+**
+**      Insert a process (PID) into both process tables
+**
+**  FORMAL PARAMETERS:
+**
+**      thepid:
+**          PID to insert into the table
+**
+**  RETURN VALUE:
+**
+**      Index of the table position for the PID
+**
+**  SIDE EFFECTS:
+**
+**      The pid fields of the index position in the processes and processes_ant
+**	tables are updated with the value of thepid
+**
+**  DESIGN:
+**
+**
+**  PRECONDITIONS:
+**   
+**  	The 'thepid' process MUST NOT exist already in the tables. This
+**	procedure DOES NOT check this precondition 
+**   
+**
+**
+**--
+**/
+insert_process: proc(thepid) returns(bin fixed(15));
+    dcl thepid	bin fixed(31),
+	index   bin fixed(15)   init(0),
+	i	bin fixed(15)   init(0);
+
+    do i=1 to num_processes while(index=0);
+    	if process(i).pid = 0 then do;
+	    process(i).pid     = thepid;
+	    process_ant(i).pid = thepid;
+	    index = i; 
+	end;
+    end;
+    return (index);
+end insert_process;
+
+/*
+**++
+**  FUNCTIONAL DESCRIPTION:
+**
+**      Remove (blank) a process table entry
+**
+**  FORMAL PARAMETERS:
+**
+**      index:
+**          Index of the table entry to clear
+**
+**  RETURN VALUE:
+**
+**      None
+**
+**  SIDE EFFECTS:
+**
+**      This procedure modifies the processlist and processlist_ant structures
+**	zeroing the table entries corresponding to the index parameter 
+**
+**  DESIGN:
+**
+**
+**
+**
+**--
+**/
+remove_process: proc(index);
+    dcl index   bin fixed(15);
+
+    process(index).pid = 0;
+    process(index).name = '';
+    process(index).user = '';
+    process(index).terminal = '';
+    process(index).owner = 0;
+    process(index).owneridx = 0;
+    process(index).cputime = 0;
+    process(index).diocnt = 0;
+    process(index).biocnt = 0;
+    process(index).cputime_s = 0;
+    process(index).diocnt_s = 0;
+    process(index).biocnt_S = 0;
+
+    process_ant(index) = process(index);
+end remove_process;
+
+/*
+**++
+**  FUNCTIONAL DESCRIPTION:
+**
+**      Accumulate the process activity from children to parent (owner)
+**
+**  FORMAL PARAMETERS:
+**
+**      pid:	    Process identification of the process we are accumulating
+**	name:	    Name of the process being worked
+**	user:	    Username corresponding to the process being worked
+**	terminal:   Terminal attached to the process
+**  	cputime:    Total CPU time used by the process
+**	diocnt:	    Number of DIO (Direct I/O) performed by the process
+**	biocnt:	    Number of BIO (Buffered I/O) performed by the process
+**
+**  RETURN VALUE:
+**
+**
+**  SIDE EFFECTS:
+**
+**      Modifies the processes structure, adding or modifying its current
+**	entries.
+**
+**  DESIGN:
+**
+**      The procedure will check if the process is already in the tables.
+**	If it is not, it will be inserted. After that it will accumulate
+**	the resource usage values to all the processes over it in the job
+**	tree; this means the "parent" process (the one without an owner)
+**	will have accumulated the resource usage of all its children.
+**
+**
+**  IMPLICIT INPUT PARAMETERS:
+**   
+**  	processes:
+**          Structure containing the process table
+**   
+**
+**--
+*/
+accumulate_process: procedure(pid,name,user,owner,terminal,
+			      cputime,diocnt,biocnt) nonrecursive;
+    dcl pid	bin fixed(31),
+	name	char(15),
+	user	char(12),
+	terminal char(8),
+	owner	bin fixed(31),
+	cputime	bin fixed(31),
+	diocnt	bin fixed(31),
+	biocnt	bin fixed(31);
+    dcl idx	bin fixed(31)	init(0);
+    dcl parent  bin fixed(31)   init(0);
+
+    idx = find_process(pid);
+    if (idx = 0) then do;
+	idx = insert_process(pid);
+	if idx = 0 then do;
+	    put skip list ('Process table capacity exceeded');
+	    signal error;
+	end; else do;
+	    process(idx).name = name;
+	    process(idx).user = user;
+	    process(idx).owner = owner;
+	    process(idx).terminal = terminal;
+	    if (process(idx).owner ^= 0) then do;
+		process(idx).owneridx = find_process(process(idx).owner);
+	    end;
+	    process_ant(idx).name  = process(idx).name;
+	    process_ant(idx).user  = process(idx).user;
+	    process_ant(idx).owner = process(idx).owner;
+	    process_ant(idx).terminal = process(idx).terminal;
+	end;
+    end;
+    process(idx).cputime = cputime;
+    process(idx).diocnt  = diocnt;
+    process(idx).biocnt  = biocnt;
+    if process(idx).owneridx = 0 then do;
+	return;
+    end; else do;
+	parent = idx;
+	do while(process(parent).owneridx ^= 0);
+	    parent = process(parent).owneridx;
+	    process(parent).cputime_s = process(parent).cputime_s + cputime;
+	    process(parent).diocnt_s  = process(parent).diocnt_s  + diocnt;
+	    process(parent).biocnt_s  = process(parent).biocnt_s  + biocnt;
+	end;
+    end;
+
+end accumulate_process;
+
+ 
+/*
+**++
+**  FUNCTIONAL DESCRIPTION:
+**
+**      This function returns an 8-byte string with the ASCII hex representation
+**	of its input value.
+**
+**  FORMAL PARAMETERS:
+**
+**      n:
+**          Input value: a longword to be translated to hex text
+**
+**  RETURN VALUE:
+**
+**      CHAR(8) containing the hex representation for n
+**
+**  SIDE EFFECTS:
+**
+**
+**  DESIGN:
+**
+**      This function calls the RTL routine OTS$CVT_L_TZ to do the conversion.
+**	The return value obtanied by the call is discarded.
+**
+**
+**
+**--
+**/
+hexvalue: procedure (n) returns(char(8));;
+    dcl n	    bin fixed(31);
+    dcl hex	    char(8) init('');
+    dcl rc	    bin fixed(31);
+
+    rc = OTS$CVT_L_TZ(n,hex,8,4);
+
+    return(hex);
+end hexvalue;
+
+
+ 
+/*
+**++
+**  FUNCTIONAL DESCRIPTION:
+**
+**      Get the text corresponding to a message code
+**
+**  FORMAL PARAMETERS:
+**
+**	msgid:
+**	    Message code (VMS condition code)
+**      intval:
+**          Integer value associated to the message.
+**      strval:
+**	    String value associated to the message
+**
+**  RETURN VALUE:
+**
+**      Returns the fully expanded and completed text corresponding to
+**	the requested message.
+**
+**  SIDE EFFECTS:
+**
+**      None
+**
+**  DESIGN:
+**
+**      This procedure uses LIB$SYS_GETMSG to get the message template and
+**	LIB$SYS_FAO to replace the parameter markers with the actual values.
+**	For messages with up to one string and one integer parameter, the
+**	values to substitute can be got from the parameters of the call. For
+**	other messages (GUR_STRTUP for instance) global variables are used.
+**
+**  PRECONDITIONS:
+**   
+**  	For messages with more than one string or integer markers, the
+**	appropriate global variables must contain correct values before
+**	calling this procedure.
+**
+**--
+**/
+get_message: procedure (msgid, intval, strval) returns(char(*));
+    dcl msgid		bin fixed(31);
+    dcl intval		bin fixed(31);
+    dcl strval		char(*);
+    dcl msgbuf		char(80)	init('');
+    dcl msgout		char(160)	init('');
+    dcl msglen		bin fixed(15)	init(0);
+    dcl	rc		bin fixed(31)	init(0);
+    dcl w_intv		bin fixed(31)   init(0);
+    dcl w_maxi		bin fixed(31)	init(0);
+    dcl w_msgi		bin fixed(31)	init(0);
+    dcl l_str		bin fixed(15)	init(0);
+    dcl w_str		char(80) 	init('');    
+
+    rc = lib$sys_getmsg (
+             msgid, 
+             msglen, 
+             msgbuf, 
+             '11100000'B,);
+    if ISFAILURE(rc) then call LIB$SIGNAL(rc);
+
+    if (strval ^= '') then do;
+	l_str = length(trim(strval));
+	w_str = trim(strval);
+    end;
+    select(msgid);
+	when(GUR_BADINT) do;
+	    rc = lib$sys_fao (
+                     substr(msgbuf,1,msglen), 
+                     msglen, 
+                     msgout, 
+		     value(0),
+		     value(l_str),    
+                     w_str);
+	end;
+	when(GUR_KILLED) do;
+	    rc = lib$sys_fao(
+		    substr(msgbuf,1,msglen),
+		    msglen,
+		    msgout,
+		    value(0),
+		    value(l_str),    
+		    w_str,
+		    value(intval));
+	end;
+	when(GUR_TSTAMP) do;
+	    rc = lib$sys_fao(
+		    substr(msgbuf,1,msglen),
+		    msglen,
+		    msgout,
+		    value(0));
+	end;
+	when(GUR_EXIT) do;
+	    rc = lib$sys_fao(
+		    substr(msgbuf,1,msglen),
+		    msglen,
+		    msgout,
+		    value(0));
+	end;
+	when(GUR_STRTUP) do;
+	    w_intv = checktime;
+	    w_maxi = max_idlecount;
+	    w_msgi = msg_idlecount;
+	    rc = lib$sys_fao(
+		    substr(msgbuf,1,msglen),
+		    msglen,
+		    msgout,
+		    value(0),
+		    value(w_intv),
+		    value(w_maxi),
+		    value(w_msgi));
+	end;
+	otherwise msgout = substr(msgbuf,1,msglen);
+    end;
+    if ISFAILURE(rc) then call LIB$SIGNAL(rc);
+
+    return(substr(msgout,1,msglen));
+end get_message;
+
+
+/*
+**++
+**  FUNCTIONAL DESCRIPTION:
+**
+**      Initialize the $GETJPI itemlist and the process tables
+**
+**  FORMAL PARAMETERS:
+**
+**      None
+**
+**  RETURN VALUE:
+**
+**      None
+**
+**  SIDE EFFECTS:
+**
+**      The structures processlist and processlist_ant are initialized to
+**	zeroes and blanks; the structure itemlist is filled with the
+**	codes and addresses needed to get the wanted process information.
+**
+**  DESIGN:
+**
+**
+**--
+**/
+initialize: proc;
+    dcl i   bin fixed(15);
+
+    addr(control_flags)->JPI$V_NO_TARGET_INSWAP = '1'b;
+    addr(control_flags)->JPI$V_NO_TARGET_AST    = '1'b;
+
+    pid_to_get = -1;
+
+    do i=1 to num_processes;
+	process(i).cputime = 0;
+	process(i).biocnt = 0;
+	process(i).diocnt = 0;
+	process(i).cputime_s = 0;
+	process(i).diocnt_s = 0;
+	process(i).biocnt_s = 0;
+    end;
+
+    item(1).itemcode = JPI$_GETJPI_CONTROL_FLAGS;
+    item(1).bufflen  = 4;
+    item(1).buffaddr = addr(control_flags);
+    item(1).retlen   = addr(control_flags_l);
+    
+    item(2).itemcode = JPI$_PRCNAM;
+    item(2).bufflen  = 15;
+    item(2).buffaddr = addr(process_name);
+    item(2).retlen   = addr(process_name_l);
+    
+    item(3).itemcode = JPI$_USERNAME;
+    item(3).bufflen  = 12;
+    item(3).buffaddr = addr(process_user);
+    item(3).retlen   = addr(process_user_l);
+
+    item(4).itemcode = JPI$_PID;
+    item(4).bufflen  = 4;
+    item(4).buffaddr = addr(process_pid);
+    item(4).retlen   = NULL;
+
+    item(5).itemcode = JPI$_JOBTYPE;
+    item(5).bufflen  = 4;
+    item(5).buffaddr = addr(process_jobtype);
+    item(5).retlen   = NULL;
+
+    item(6).itemcode = JPI$_STATE;
+    item(6).bufflen  = 4;
+    item(6).buffaddr = addr(process_state);
+    item(6).retlen   = NULL;
+
+    item(7).itemcode = JPI$_CPUTIM;
+    item(7).bufflen  = 4;
+    item(7).buffaddr = addr(process_cputime);
+    item(7).retlen   = NULL;
+
+    item(8).itemcode = JPI$_DIRIO;
+    item(8).bufflen  = 4;
+    item(8).buffaddr = addr(process_diocnt);
+    item(8).retlen   = NULL;
+
+    item(9).itemcode = JPI$_BUFIO;
+    item(9).bufflen  = 4;
+    item(9).buffaddr = addr(process_biocnt);
+    item(9).retlen   = NULL;
+
+    item(10).itemcode = JPI$_OWNER;
+    item(10).bufflen  = 4;
+    item(10).buffaddr = addr(process_owner);
+    item(10).retlen   = NULL;
+
+    item(11).itemcode = JPI$_TERMINAL;
+    item(11).bufflen  = 8;
+    item(11).buffaddr = addr(process_terminal);
+    item(11).retlen   = addr(process_terminal_l);
+end initialize;
+
+ 
+/*
+**++
+**  FUNCTIONAL DESCRIPTION:
+**
+**      Empty the process tables
+**
+**  FORMAL PARAMETERS:
+**
+**
+**  RETURN VALUE:
+**
+**
+**  SIDE EFFECTS:
+**
+**      This procedure initializes (empties) the processes and processes_ant
+**	structures.
+**
+**  DESIGN:
+**
+**      None
+**
+**  POSTCONDITIONS:
+**   
+**  	The processes and processes_ant structures will be initialized,
+**	with all the entries to empty values.
+**   
+**
+**
+**--
+**/
+empty_table: procedure;
+    dcl i	    bin fixed(15) init(0);
+
+    do i=1 to num_processes;
+	process(i).pid = 0;
+	process(i).name = '';
+	process(i).user = '';
+	process(i).terminal = '';
+	process(i).owner = 0;
+	process(i).owneridx = 0;
+	process(i).idlecount = 0;
+	process(i).cputime = 0;
+	process(i).biocnt = 0;
+	process(i).diocnt = 0;
+	process(i).cputime_s = 0;
+	process(i).diocnt_s = 0;
+	process(i).biocnt_s = 0;
+	process_ant(i) = process(i);
+    end;
+
+end empty_table; 
+
+/*
+**++
+**  FUNCTIONAL DESCRIPTION:
+**
+**      Get the value for the initial check checktime.
+**
+**  FORMAL PARAMETERS:
+**
+**
+**  RETURN VALUE:
+**
+**      Returns the value for the checktime. This will be the time the
+**	program will sleep after each activity check.
+**
+**  SIDE EFFECTS:
+**
+**
+**  DESIGN:
+**
+**      The logical name GURIPA_checktime in the table GURIPA_LNM will be
+**	used (if present) to set up the check checktime. If the logical
+**	name does not exist, or contains an invalid numeric string the
+**	default value (300 seconds = 5 minutes) will be used; in case of
+**	an invalid numeric string an error message will be logged.
+**
+**
+**--
+**/
+get_checktime: procedure returns(bin float(24));
+    dcl wchecktime	    bin float(24)   init(0.0);
+    dcl def_checktime	    bin float(24)   init(300.0);
+    dcl GURIPA_INTERVAL	    char(15) static init('GURIPA_INTERVAL');
+    dcl s_checktime	    char(32) init ('');
+
+    s_checktime = get_logical(GURIPA_INTERVAL);
+    if s_checktime = '' then do;
+	wchecktime = def_checktime; /* Default: 5 minutes                  */
+    end; else do;
+	retcode = OTS$CVT_T_F(
+	    s_checktime,
+	    wchecktime,,,
+	    '10000000'B);	
+	if ISFAILURE(retcode) then do;
+    	    put file(logfile)
+		edit(get_message(GUR_BADINT,0,GURIPA_INTERVAL))
+	    	    (skip,a);
+	    wchecktime = def_checktime;
+	end; 
+    end;
+
+    return(wchecktime);
+end get_checktime;
+
+ 
+/*
+[procedure_level_comments]
+**/
+get_idlecount: procedure returns(bin fixed(15));
+    dcl widlecount	    bin fixed(15) init(0);
+    dcl def_idlecount	    bin fixed(15) init(12);
+    dcl s_widlecount	    bin fixed(31) init(2);
+    dcl s_idlecount	    char(32) init('');
+    dcl GURIPA_IDLECOUNT    char(16) static init('GURIPA_IDLECOUNT');
+
+    s_idlecount = get_logical(GURIPA_IDLECOUNT);
+    if s_idlecount = '' then do;
+	widlecount = def_idlecount;
+    end; else do;
+	retcode = OTS$CVT_TU_L(s_idlecount,widlecount,s_widlecount,
+			       '10000000'b);
+	if ISFAILURE(retcode) then do;
+    	    put file(logfile)
+		edit(get_message(GUR_BADINT,0,GURIPA_IDLECOUNT))
+	    	    (skip,a);
+	    widlecount = def_idlecount;
+	end; 
+    end;	
+
+    return(widlecount);
+end get_idlecount;
+
+/*
+[procedure_level_comments]
+**/
+get_msgidlecount: procedure returns(bin fixed(15));
+    dcl widlecount	    bin fixed(15) init(0);
+    dcl s_widlecount	    bin fixed(31) init(2);
+    dcl s_idlecount	    char(32) init('');
+    dcl GURIPA_MSGIDLECOUNT char(19) static init('GURIPA_MSGIDLECOUNT');
+
+    s_idlecount = get_logical(GURIPA_MSGIDLECOUNT);
+    if s_idlecount = '' then do;
+	widlecount = 0;
+    end; else do;
+	retcode = OTS$CVT_TU_L(s_idlecount,widlecount,s_widlecount,
+			       '10000000'b);
+	if ISFAILURE(retcode) then do;
+    	    put file(logfile)
+		edit(get_message(GUR_BADINT,0,GURIPA_MSGIDLECOUNT))
+	    	    (skip,a);
+	end; 
+    end;	
+
+    return(widlecount);
+end get_msgidlecount;
+  
+
+/*
+[procedure_level_comments]
+**/
+get_logical: procedure(logical) returns(char(*));
+    dcl logical		    char(*);
+    dcl TABLENAME	    char(10) static init('LNM_GURIPA');
+    dcl translation	    char(32) init('');
+    dcl translation_l	    bin fixed(31) init(0);
+    dcl 1 itemlist,
+	  3 item(1)		like item_entry,
+          3 endlist,
+  	    5 zeros(2)		bin fixed(31) init((2)0);
+ 
+    item(1).itemcode = LNM$_STRING;
+    item(1).bufflen  = 32;
+    item(1).buffaddr = addr(translation);
+    item(1).retlen   = addr(translation_l);
+
+    retcode = sys$trnlnm (
+              	  LNM$M_CASE_BLIND, 
+              	  TABLENAME, 
+              	  logical,, 
+              	  itemlist);    
+    if ISFAILURE(retcode) then do;
+	translation = '';
+	translation_l = 0;
+    end;
+
+    return(substr(translation,1,translation_l));
+end get_logical;
+
+ 
+/*
+[procedure_level_comments]
+**/
+setup_mbx: procedure;
+    dcl rc		    bin fixed(31) init(SS$_NORMAL);
+    dcl perm		    bin fixed(31) static init(1);
+    dcl temp		    bin fixed(31) static init(0);
+    dcl prot		    bit(32) init('0000000000001111'B);
+    rc = sys$crembx (unspec(perm),
+             mbx_chan, 
+             128,,prot,,
+             mbx_name);
+    if ISFAILURE(rc) then call lib$signal(rc);
+
+end setup_mbx;
+
+ 
+/*
+[procedure_level_comments]
+**/
+read_mbx: procedure;
+    dcl rc		bin fixed(31) init(SS$_NORMAL);
+
+    rc = sys$qio (, 
+             mbx_chan, 
+             IO$_READVBLK,
+	     mbx_iosb, 
+             guripa_ast,
+	     val(areaptr), 
+             mbx_buffer, 
+             128,,,,);
+    if ISFAILURE(rc) then do;
+	call lib$signal(rc);
+    end;
+
+end read_mbx;
+
+
+end_process:
+    close file(logfile);
+    if mbx_chan ^= 0 then do;
+	rc2 = SYS$DELMBX(mbx_chan);	
+    end;
+    free ast_shared;
+    return(retcode);
+
+end GURIPA;
+
+/*
+**++
+**  FUNCTIONAL DESCRIPTION:
+**
+**      AST procedure for the mailbox reading
+**
+**  FORMAL PARAMETERS:
+**
+**
+**  RETURN VALUE:
+**
+**      None
+**
+**  SIDE EFFECTS:
+**
+**      This AST level procedure can change the values of the variables
+**	checktime, max_idlecount, msg_idlecount and end_program; even more,
+**	can modify any of the variables declared as globalrefs to the
+**	main program. The specified variables are of special importance
+**	since they define the behaviour of the main program (or signals it
+**	to exit).
+**
+**  DESIGN:
+**
+**      This is AST code, so it must be lean and fast. It schedules the next
+**	read of the MBX and re-arms itself. It also does writes to the MBX;
+**	all the I/O is asynchronous and without wait.
+**
+**	Special care must be taken to avoid interference with the main
+**	program. For example, the output $QIOs MUST use a different
+**	iosb block than the input (read) $QIOs, or else the AST will be
+**	invoked at the end of the writes (which is a Bad Thing).
+**
+**  [logical_properties]...
+**
+**
+**--
+**/
+guripa_ast: procedure(areaptr) options(ident('V01.02'));
+
+%INCLUDE 'GURIPA_CMD.INC';
+%INCLUDE LIB$SIGNAL;
+%INCLUDE LIB$GETJPI;
+%INCLUDE OTS$CVT_L_TZ;
+%INCLUDE SYS$QIO;
+%INCLUDE SYS$WAKE;
+%INCLUDE SYS$SETAST;
+%INCLUDE $IODEF;
+
+    dcl areaptr			pointer value;
+
+    dcl rc			bin fixed(31) init(SS$_NORMAL);
+    dcl	rearm_qio		bit(1)        init('1'b);
+
+    dcl 1 ast_shared		based(areaptr),
+	  3 mbx_name		char(10),
+	  3 mbx_chan		bin fixed(15),
+	  3 mbx_buffer		char(128),
+	  3 mbx_iosb,
+	    5 iostat		bin fixed(31),
+	    5 reserved		bin fixed(31),
+	3 flags,
+	    5 end_program	bit(1),
+	    5 clear_table	bit(1) unal,
+	    5 reserved		bit(30) unal,
+	3 checktime		bin float(24),
+	3 max_idlecount		bin fixed(15),
+	3 msg_idlecount		bin fixed(15);
+
+    dcl mypid			bin fixed(31)   init(0);    
+
+    dcl 1 cmnd			like guripa_cmd
+				based(addr(mbx_buffer));
+    dcl flush			builtin;
+
+    if ISSUCCESS(mbx_iosb.iostat) then do;
+	select(cmnd.code);
+	    when('EXIT') do;
+		end_program = '1'b;
+		rearm_qio = '0'b;
+		rc = sys$wake (,);
+	    end;
+	    when('SHOW') do;
+		rc = lib$getjpi (
+                     	 JPI$_PID,,, 
+                     	 mypid,,);
+                cmnd.values.gurpid   = mypid;
+		cmnd.values.interval = checktime;
+		cmnd.values.maxidle  = max_idlecount;
+		cmnd.values.msgidle  = msg_idlecount;
+		rc = SYS$QIO(,
+			mbx_chan,
+			IO$_WRITEVBLK,
+			,,,
+			mbx_buffer,
+			128,,,,);
+	    end;
+	    when('SET ','STRT') do;
+		if cmnd.interval > 0 then checktime    = cmnd.interval;
+		if cmnd.maxidle  > 0 then max_idlecount = cmnd.maxidle;
+		if cmnd.msgidle >= 0 then msg_idlecount = cmnd.msgidle;
+		rc = lib$getjpi (
+                     	 JPI$_PID,,, 
+                     	 mypid,,);
+                cmnd.values.gurpid   = mypid;
+		cmnd.values.interval = checktime;
+		cmnd.values.maxidle  = max_idlecount;
+		cmnd.values.msgidle  = msg_idlecount;
+
+		/* if cmnd.code = 'STRT' then rc = SYS$WAKE(,); */
+
+		rc = SYS$QIO(,
+			mbx_chan,
+			IO$_WRITEVBLK,
+			,,,
+			mbx_buffer,
+			128,,,,);
+	    end;
+	    otherwise do;
+	    end;
+	end;
+    end; else if mbx_iosb.iostat ^= SS$_ENDOFFILE then do;
+	call lib$signal(mbx_iosb.iostat);
+    end;	
+    
+    if rearm_qio then do;
+	rc = sys$qio (, 
+             mbx_chan, 
+             IO$_READVBLK,
+	     mbx_iosb, 
+             guripa_ast,
+	     areaptr, 
+             mbx_buffer, 
+             128,,,,);
+	if ISFAILURE(rc) then do;
+	    call lib$signal(rc);
+	end;
+    end;
+
+end guripa_ast;
+

@@ -1,0 +1,41 @@
+1  DITTO
+   Displays the contents of a file in hexadecimal format, in a similar
+   way the mainframe DITTO utility does. For instance, a record containing
+   the string "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ" will be displayed as:
+
+                ....+....1....+....2....+....3....+....4....+....5....+....6...
+        1(   36)0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ                           
+                333333333344444444444444455555555555
+                0123456789123456789ABCDEF0123456789A
+
+   Format
+
+     DITTO  filespec
+ 
+
+2  Parameter
+ 
+
+filespec
+
+   Specifies name of the file being dumped. Wilcards are not allowed
+
+
+2  Qualifiers
+ 
+/COLROW
+
+      /COLROW=nn
+
+  Specifies the number of displayed rows that will trigger the output of
+  a column pattern line. The column patter line is always displayed at a 
+  beginning of a record dump, regardless of its length. If /COLROW is not
+  specified, the defaul value is 24.
+ 
+/OUTPUT
+
+      /OUTPUT[=filespec]
+
+   Specifies the output file for the dump. If the /OUTPUT qualifier
+   is not specified, the dump goes to SYS$OUTPUT. 
+

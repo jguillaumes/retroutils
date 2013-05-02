@@ -1,0 +1,33 @@
+!
+! String initialization macros:
+!
+MACRO
+    !+
+    ! Build a static descriptor from an ASCII string
+    !-
+    DESC_STATIC(S) [] = BLOCK[DSC$C_S_BLN,BYTE] PRESET(
+			    [DSC$W_LENGTH] = %CHARCOUNT(S),
+			    [DSC$B_DTYPE]  = DSC$K_DTYPE_T,
+			    [DSC$B_CLASS]  = DSC$K_CLASS_S,
+			    [DSC$A_POINTER] = UPLIT(S)) %,
+    !+
+    ! Build a fixed descriptor using a pointer (P) and a length (L)
+    !-
+    DESC_FIXED(P,L) [] = BLOCK[DSC$C_S_BLN,BYTE] PRESET(
+			    [DSC$W_LENGTH] = L,
+			    [DSC$B_DTYPE]  = DSC$K_DTYPE_T,
+			    [DSC$B_CLASS]  = DSC$K_CLASS_S,
+			    [DSC$A_POINTER] = P) % ,
+    !+
+    ! Build an empty, dynamic descriptor
+    !-
+    DESC_DYNAMIC  [] = BLOCK[DSC$C_D_BLN,BYTE] PRESET(
+			    [DSC$W_LENGTH] = 0,
+			    [DSC$B_DTYPE]  = DSC$K_DTYPE_T,
+			    [DSC$B_CLASS]  = DSC$K_CLASS_D,
+			    [DSC$A_POINTER] = 0) %,
+    CHAR_VECTOR(S) [] = VECTOR[CH$ALLOCATION(%CHARCOUNT(S))]
+		        INITIAL(S) % ,
+    CHAR_BUFFER(C,L) [] = VECTOR[L]
+		          INITIAL(REP L OF BYTE(C)) %;
+

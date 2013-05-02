@@ -1,0 +1,85 @@
+1  GURIPA
+   Controls the GURIPA detached process, which checks the system for
+   inactive processes and kills them.
+
+   The GURIPA process uses three logical names to tune its behaviour:
+
+   - GURIPA_INTERVAL allows to specify the interval (in seconds) within two
+     process scans.
+ 
+   - GURIPA_MAXIDLE specifies the number of intervals (each one lasting the
+     number of seconds specified by GURIPA INTERVALS) before an idle process
+     will be killed.
+
+   - GURIPA_MSGIDLE specifies the number of intervals before an idle process
+     will begin to get warning messages.
+   
+   Those logical names must be defined in the GURIPA_LNM table, which in
+   turn must be listed under SYSTEM$LNM_DIRECTORY.
+
+   If the logical names are not defined, the default values are:
+
+   - Checking interval of 300 seconds (5 minutes).
+   - Maximum idle intervals: 12 (one hour).
+   - Intervals before messages: 11 (55 munutes).
+
+   Those values can be overriden at start time using the adequate
+   qualifiers.
+
+   Format
+
+     DITTO  [/START] [/STOP] [/SHOW] [/INTERVAL=nnnnn] [/MAXIDLE=nnnnn]
+                                                       [/MSGIDLE=nnnnn]
+
+2  Qualifiers
+
+/START
+
+      /START
+
+  Starts the GURIPA detached process. You can optionally specify the
+  qualifiers /INTERVAL, /MAXIDLE and /MSGIDLE to override the default values.
+ 
+/STOP
+
+      /STOP
+
+  Stops the GURIPA detached process.
+
+/SHOW
+
+      /SHOW
+
+  Displays GURIPA current operating parameters.
+
+/INTERVAL
+
+      /INTERVAL=nnnnn
+
+  Specifies the interval (in seconds) between process scans. If specified with
+  /START it overrides the GURIPA_INTERVAL logical name value. If specified 
+  without /START it will change the value for the current running GURIPA.
+  The new value for the interval will be in effect after the current
+  interval finishes.
+
+/MAXIDLE
+
+      /MAXIDLE=nnnnn
+  
+  Specifies the number of scan cycles after which an idle process will be
+  deleted. If specified with /START it overrides the GURIPA_MAXIDLE logical
+  name value. If specified without /START it will change the value for the
+  current running GURIPA. The new value will be used at the next process
+  scan.
+
+/MSGIDLE
+
+      /MSGIDLE=nnnnn
+  
+  Specifies the number of scan cycles after which an idle process will be
+  warned. If specified with /START it overrides the GURIPA_MSGIDLE logical
+  name value. If specified without /START it will change the value for the
+  current running GURIPA. The new value will be used at the next process
+  scan.
+
+

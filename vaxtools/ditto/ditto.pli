@@ -1,0 +1,420 @@
+/*  
+**++
+**  FACILITY:  DITTO
+**
+**  MODULE DESCRIPTION:
+**
+**      Dump the contents of a file in hexadecimal format like the
+**      mainframe DITTO utility program  
+**
+**  AUTHORS:
+**
+**      Jordi Guillaumes Pons
+**
+**  CREATION DATE:     20.03.2013
+**
+**  DESIGN ISSUES:
+**
+**      [tbs]
+**
+**  [optional_module_tags]...
+**
+**  MODIFICATION HISTORY:
+**
+**	V01.00	    20.03.2013	First version
+**	V01.10	    28.03.2013	Remove ONPAGE handling to print the
+**				column indicator, switch to program
+**				controlled line counter; switch OUTFILE
+**				from PRINT to STREAM OUTPUT to disable
+**				the line counter.
+**	V02.00	    31.03.2013	DCL command implementation
+**	V02.01	    31.03.2013	Added '*' to set of printable chars
+**				Added /COLROW to command syntax
+**	V02.02	    05.04.2013	Return correct status code to DCL.
+**--
+**/
+
+/*
+**++
+**  FUNCTIONAL DESCRIPTION:
+**
+**      Main procedure
+**
+**  FORMAL PARAMETERS:
+**
+**      Command line
+**
+**  RETURN VALUE:
+**
+**	None
+**
+**  SIDE EFFECTS:
+**
+**	Prints to SYS$OUTPUT
+**
+**  DESIGN:
+**
+**
+**  [logical_properties]...
+**
+**
+**--
+**/
+
+DITTO: proc options(main,ident('V02.02')) returns(bin fixed(31));
+
+
+/* RMS structures */
+%include $FABDEF;
+%include $RABDEF;
+
+/* RMS services   */
+%include SYS$OPEN;
+%include SYS$CONNECT;
+%include SYS$CLOSE;
+%include SYS$DISCONNECT;
+%include SYS$GET;
+
+/* RTL routines   */
+%include LIB$SIGNAL;
+%include LIB$STOP;
+%include STR$COPY_R;
+%include OTS$CVT_L_TZ;
+%include OTS$CVT_TU_L;
+
+/* CLI routines */
+%include CLI$PRESENT;
+%include CLI$GET_VALUE;
+
+%ISSUCCESS: procedure (CODE) returns(character);
+    %declare 
+	CODE  character,
+    	PTEXT character;
+    %PTEXT = 'MOD(' || CODE ||',2)^=0';
+    return(PTEXT);
+%end;
+
+%ISFAILURE: procedure (CODE) returns(character);
+    %declare 
+	CODE  character,
+    	PTEXT character;
+    %PTEXT = 'MOD(' || CODE ||',2)=0';
+    return(PTEXT);
+%end;
+
+%activate ISSUCCESS,ISFAILURE;
+
+dcl 1 fab	    like fabdef,
+    1 rab	    like rabdef;
+
+declare
+    SS$_NORMAL	    bin fixed(31)	globalref value,
+    RMS$_EOF	    bin fixed(31)	globalref value,
+    RMS$_FNF	    bin fixed(31)	globalref value,
+    CLI$_PRESENT    bin fixed(31)	globalref value;
+
+declare
+    buff	    char(32767)         init(''),
+    lrecord	    binary fixed(15)	init(0),
+    rc		    binary fixed(31)	init(SS$_NORMAL),
+    pliretc	    binary fixed(31)	init(SS$_NORMAL),
+    fname	    char(80)		init((80)' ');
+
+dcl marker	    char(64)		init((64)'.'),
+    eof		    bit(1)		init('0'B),
+    eop		    bit(1)		init('0'B),
+    numrec	    bin fixed(31)	init(0),
+    nline	    bin fixed(31)	init(0),
+    colrow	    bin fixed(15)	init(24),
+    colrows	    char(16)		init(''),
+    i		    bin fixed(15)	init(0),
+    nn		    pic '99'		init(0);
+
+declare
+    OUTFILE	    file stream output,
+    ofname	    char(80)		init('SYS$OUTPUT');
+
+
+
+    on error begin;
+	on error system;
+	goto return_to_dcl;
+    end;
+
+    do i=5 to 55 by 10;
+	substr(marker,i,1) = '+';
+    end;
+    do i=10 to 60 by 10;
+	nn = i;
+	substr(marker,i,1) = substr(nn,1,1);
+    end;
+
+    rc = CLI$GET_VALUE('FILENAME',fname);
+    call checkStatus(rc);
+
+    rc = CLI$PRESENT('OUTPUT');
+    if (rc = CLI$_PRESENT) then do;
+	rc = CLI$GET_VALUE('OUTPUT', ofname);
+    end;
+
+    rc = CLI$PRESENT('COLROW');
+    if (rc = CLI$_PRESENT) then do;
+	rc = CLI$GET_VALUE('COLROW', colrows);
+	rc = OTS$CVT_TU_L(colrows, colrow, 2, '1'b);
+        call checkStatus(rc);
+    end;
+
+    open file(OUTFILE) TITLE(ofname);
+    rc = openFile(fname,fab,rab); 
+    call checkStatus(rc);
+
+    call printHeader(fab,rab);
+    put file(OUTFILE) edit(marker) (skip(2),x(16),a);
+    nline = nline + 2;
+
+    lrecord = size(buff);
+    rc = readRecord(rab,buff,lrecord, eof);
+    do while ((^eof) & (mod(rc,2)^=0));
+	numrec = numrec + 1;
+	call dumpRecord(buff, lrecord, numrec);
+	lrecord = size(buff);
+	rc = readRecord(rab, buff, lrecord, eof);
+    end;
+
+    call checkStatus(rc);
+
+    rc = closeFile(fab,rab);    
+    call checkStatus(rc);
+
+return_to_dcl:
+    return(pliretc);
+
+
+dumpRecord: proc(buffer,lbuffer, numrec);
+dcl buffer	char(*),
+    lbuffer	bin fixed(15),
+    numrec	bin fixed(31);
+
+dcl upper	    char(64)		init((64)' '),
+    lower	    char(64)		init((64)' '),
+    readable	    char(64)		init((64)' '),
+    uparray(64)	    char(1)		def(upper) unaligned,
+    loarray(64)	    char(1)		def(lower) unaligned,
+    (i,j)	    bin fixed(15)	init(0),
+    numparts	    bin fixed(15)	init(0),
+    lastpart	    bin fixed(15)	init(0),
+    hexbyte	    char(2)		init('  ');
+
+    if eop then do;
+        put file(OUTFILE) edit(marker) (skip(2),x(16),a);
+	eop = '0'b;
+	nline = 3;
+    end;
+
+    put file(OUTFILE)
+	edit(numrec, '(', lbuffer, ')')
+	    (skip,p'ZZZZZ.ZZ9', A, P'ZZZZ9',A);
+    
+    nline = nline + 1;
+    numparts = lbuffer/64 + 1;
+    lastpart = mod(lbuffer,64);
+
+    do i=1 to numparts-1;
+	j = 64*(i-1) + 1;
+	call dumpPart(i, substr(buffer,j,64),64);
+    end;
+
+    if lastpart > 0 then do;
+	call dumpPart(i, substr(buffer,64*(numparts-1)+1), lastpart);
+    end;
+    if (nline > colrow) then eop = '1'b;
+
+    dumpPart: proc(num, text, len);
+    dcl	num	    bin fixed(15),
+	text	    char(64),
+	len	    bin fixed(15);
+    dcl	i	    bin fixed(15)	init(0),
+	sts	    bin fixed(31)	init(0);
+	upper    = '';
+	lower    = '';
+	readable = '';	
+
+	do i=1 to len;
+	    sts = ots$cvt_l_tz(substr(text,i,1),hexbyte,2,1);
+	    call checkStatus(sts);
+	    uparray(i) = substr(hexbyte,1,1);
+	    loarray(i) = substr(hexbyte,2,1);
+	    substr(readable,i,1) = toReadable(substr(text,i,1));
+	end;
+	
+        if num = 1 then do;
+	    put file(OUTFILE)
+		edit(readable,upper,lower)
+		    (a,(2)(skip,x(16),a));
+	    nline = nline + 2;
+	end; else do;
+	    put file(OUTFILE)
+		edit(num,readable,upper,lower)
+		    (skip,x(12),p'zz9',x,a,(2)(skip,x(16),a));
+	    nline = nline + 3;
+	end;
+    end dumpPart;
+
+end dumpRecord;
+
+toReadable: proc(in) returns(char(1));
+dcl in		char(1),
+    out		char(1) init('.');
+
+    if (in >= '0' &
+        in <= '9') |
+       (in >= 'a' &
+        in <= 'z') |
+       (in >= 'A' &
+        in <= 'Z') then do;
+       out = in;
+    end; else do;
+	if verify(in,' !|""@#$~%&¬/()=?¿''¡`+[]{}çÇñÑ<>,;.:-_') = 0 then do;
+	    out = in;
+	end;
+    end;
+
+    return (out);
+end toReadable;
+
+
+readRecord: proc(rab, buffer, lbuffer, eof) returns(bin fixed(31));
+dcl 1 rab	like rabdef,
+    buffer	char(*),
+    lbuffer	bin fixed(15),
+    eof		bit(1);
+    
+    rab.rab$l_ubf = addr(buffer);
+    rab.rab$w_usz = lbuffer;
+
+    rc = sys$get (rab,,);
+    if ISSUCCESS(rc) then do;
+	lbuffer = rab.rab$w_rsz;
+    end; else do;
+	if (rc = rms$_eof) then do;
+	    rc = ss$_normal;
+	    eof = '1'b;
+	end;
+    end;
+    return(rc);
+
+end readRecord;
+
+openFile: proc(filename, fab, rab) returns(bin fixed(31));
+dcl rc		bin fixed(31)	init(SS$_NORMAL);
+dcl filename	char(*),
+    1 fab	like fabdef,
+    1 rab	like rabdef;
+dcl defspec	char(4) static	init('.DAT');
+
+    fab.fab$b_bid = fab$c_bid;
+    fab.fab$b_bln = fab$c_bln;
+
+    fab.fab$l_dna = addr(defspec);
+    fab.fab$b_dns = length(defspec);
+    fab.fab$b_fac = fab$m_get;
+    fab.fab$l_fna = addr(filename);
+    fab.fab$b_fns = length(filename);
+    fab.fab$r_fop_bits.fab$v_sqo    = '1'b; /* Sequential access */
+    fab.fab$r_shr_bits.fab$v_shrget = '1'b;
+
+    rc = sys$open (fab,,);
+
+    if ISSUCCESS(rc) then do;
+
+	rab.rab$b_bid = rab$c_bid;
+	rab.rab$b_bln = rab$c_bln;
+
+	rab.rab$l_fab = addr(fab);
+	rab.rab$b_rac = rab$c_seq;
+
+	rc = sys$connect (rab,,);
+    end;
+    
+    return(rc);
+end openFile;
+
+closeFile: proc(fab,rab) returns(bin fixed(31));
+dcl 1 fab	like fabdef,
+    1 rab	like rabdef,
+    rc		bin fixed(31)	init(SS$_NORMAL);
+
+    rc = sys$disconnect(rab,,);
+
+    if ISSUCCESS(rc) then do;
+	rc = sys$close (fab,,);
+    end;
+
+    return(rc);
+
+end closeFile;
+
+checkStatus: proc(rcode);
+dcl rcode	bin fixed(31);
+
+    if (ISFAILURE(rcode)) 
+    then do;
+	pliretc = rcode;
+	call lib$signal(rcode);
+    end;
+end checkStatus;
+
+printHeader: proc(fab,rab);
+dcl 1 fab		like fabdef,
+    1 rab		like rabdef;
+
+dcl filename	char(80)	init(''),
+    fileorg	char(32) var	init(''),
+    recfm	char(32) var	init(''),
+    recattr	char(32) var	init(''),
+    stt		bin fixed(31)   init(SS$_NORMAL);
+
+
+    stt = str$copy_r (filename, (fab.fab$b_fns), value(fab.fab$l_fna));
+    select (fab.fab$b_org);
+    	when (FAB$C_IDX)    fileorg = 'INDEXED';
+	when (FAB$C_REL)    fileorg = 'RELATIVE';
+	when (FAB$C_SEQ)    fileorg = 'SEQUENTIAL';
+    	otherwise	    fileorg = 'UNKNOWN';
+    end;
+
+    select (fab.fab$b_rfm);
+	when (FAB$C_FIX)    recfm = 'FIXED';
+	when (FAB$C_STM)    recfm = 'STREAM';
+	when (FAB$C_STMCR)  recfm = 'STREAM_CR';
+	when (FAB$C_STMLF)  recfm = 'STREAM_LF';
+	when (FAB$C_UDF)    recfm = 'UNDEFINED';
+	when (FAB$C_VAR)    recfm = 'VARIABLE';
+	when (FAB$C_VFC)    recfm = 'VARIABLE FIXED CONTROL';
+	otherwise	    recfm = 'UNKNOWN';
+    end;
+
+    if fab.fab$b_rat & FAB$M_CR  then recattr = recattr || 'CR ';
+    if fab.fab$b_rat & FAB$M_FTN then recattr = recattr || 'FORTRAN ';
+    if fab.fab$b_rat & FAB$M_PRN then recattr = recattr || 'CARRIAGE_PRINT ';
+    if fab.fab$b_rat & FAB$M_BLK then recattr = recattr || 'BLOCK_SPAN';
+    /*
+    if fab.fab$b_rat & FAB$M_MSB then recattr = recattr || 'MSB_RECORD_LENGTH ';
+    */
+
+
+
+    put file(OUTFILE)
+	edit('*** DUMP OF FILE ', filename, ' ***')
+	    (skip,a,a(fab.fab$b_fns),a);
+    put file(OUTFILE)
+	edit('    File organization  : ', fileorg,
+	     '    Record format      : ', recfm,
+	     '    Record attributes  : ', recattr,
+	     '    Max record size    : ', fab.fab$w_mrs) 
+	    ((3)(skip,a,a),skip,a,p'zz.zz9');
+   nline = nline + 5;
+
+end printHeader;
+
+end DITTO;

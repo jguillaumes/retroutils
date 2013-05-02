@@ -1,0 +1,42 @@
+1  FORCEX
+   Cancels the execution of an image using the FORCE EXIT system call (which
+   stops the image and forces it to return to DCL level) or the DELETE 
+   PROCESS (which kills the executing process). The target process can be
+   specified by name if it belongs to your own group, or by PID, using the /ID 
+   qualifier.
+
+   Formats
+
+     FORCEX [/KILL] process_name
+     FORCEX [/KILL] /IDENTIFICATION process_id 
+
+
+2  Parameter 
+
+process_name
+
+   Specifies the name of the process wich will have the executing image
+   terminated (or the whole process killed). 
+
+process_id
+
+   Specifies the identifier (pid) of the process which will have the executing
+   image terminated (or the whole process killed).
+
+
+2  Qualifiers
+ 
+/IDENTIFICATION
+
+      /IDENTIFICATION
+
+  Specifies that the first (and only) parameter has to be interpreted
+  as a process identifier (PID) instead of a process name.
+               
+/KILL
+
+      /KILL
+
+   Specifies the process must be killed, instead of simply terminating
+   the executing image.
+

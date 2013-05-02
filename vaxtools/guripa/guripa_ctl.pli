@@ -1,0 +1,507 @@
+/*
+**++
+**  FACILITY:  GURIPA - Idle process killer
+**
+**  MODULE DESCRIPTION:
+**
+**      This is the control program for the GURIPA process. This program
+**	implements the GURIPA DCL command, and allows control of the
+**	idle-killer process. The communication with the main process is
+**	done using a permanent mailbox under the logical name GURIPA_MBX.
+**
+**	The syntax of the GURIPA program is defined in the GURIPA.CLD file.
+**	This is a short summary:
+**
+**	GURIPA/START	    Starts the GURIPA process.
+**	GURIPA/STOP	    Stops orderly the GURIPA process.
+**	GURIPA/SHOW	    Shows information about the running GURIPA.
+**	GURIPA/INTERVAL=nn  Defines the checking interval (in seconds).
+**            /MAXIDLE=nn   Sets the number of intervals before an idle
+**			    process is killed.
+**	      /MSGIDLE=nn   Sets the number of intervals before an idle
+**			    process begins to get warnings.
+**	The /INTERVAL, /MAXIDLE and /MSGIDLE qualifiers can be specified
+**	also with the /START qualifier. /MSGIDLE can be negated so the
+**	processes never get warning messages.
+**
+**  AUTHORS:
+**
+**      Jordi Guillaumes i Pons	
+**
+**  CREATION DATE:     25.04.2013
+**
+**  DESIGN ISSUES:
+**
+**      [tbs]
+**
+**  FILES USED:
+**   
+**  	The logical GURIPA_MBX has to poin to the permanent mailbox to be
+**	used to send commands and receive responses from the GURIPA process.
+**   
+**  [optional_module_tags]...
+**
+**  MODIFICATION HISTORY:
+**
+**      [tbs]...
+**--
+**/
+   
+/*
+**++
+**  FUNCTIONAL DESCRIPTION:
+**
+**      This is the main procedure. It uses the CLI$xxxx routines to get
+**	the DCL command qualifiers and values and calls the appropriate
+**	internal procedures to handle them.
+**
+**  FORMAL PARAMETERS:
+**
+**	None
+**
+**  RETURN VALUE:
+**
+**      Standard VMS condition code
+**
+**  SIDE EFFECTS:
+**
+**
+**  DESIGN:
+**
+**      None
+**
+**
+**  INCLUDED FILES:
+**   
+**  	GURIPA.INC:	Preprocessor macros and constants.
+**	GURIPA_CMD.INC:	Structure for communication with the GURIPA process
+**   
+**
+**--
+**/
+GURIPA_CTL: procedure options(main,ident('V01.00')) returns(bin fixed(31));
+
+%INCLUDE 'GURIPA.INC';
+%INCLUDE 'GURIPA_CMD.INC';
+%INCLUDE SYS$ASSIGN;
+%INCLUDE SYS$DASSGN;
+%INCLUDE SYS$QIO;
+%INCLUDE SYS$BINTIM;
+%INCLUDE SYS$SETIMR;
+%INCLUDE SYS$CANTIM;
+%INCLUDE SYS$CREPRC;
+%INCLUDE SYS$READEF;
+%INCLUDE SYS$WFLOR;
+%INCLUDE SYS$CANCEL;
+%INCLUDE CLI$PRESENT;
+%INCLUDE CLI$GET_VALUE;
+%INCLUDE LIB$SIGNAL;
+%INCLUDE LIB$SYS_GETMSG;
+%INCLUDE LIB$SYS_FAO;
+%INCLUDE LIB$GET_EF;
+%INCLUDE LIB$FREE_EF;
+%INCLUDE LIB$GETJPI;
+%INCLUDE LIB$WAIT;
+%INCLUDE $IODEF;
+%INCLUDE $SSDEF;
+%INCLUDE $PRVDEF;
+%INCLUDE $PRCDEF;
+%INCLUDE $JPIDEF;
+
+dcl float		builtin,
+    fixed		builtin,
+    oncode		builtin;
+
+dcl mbxname		char(10)        init('GURIPA_MBX');
+dcl mbxchan		bin fixed(15)   init(0);
+dcl (retcode,rc2)	bin fixed(31)   init(SS$_NORMAL);
+dcl lit5sec		char(16) static init('0000 00:00:05.00');
+dcl bin5sec		char(8)         init(low(4));
+
+dcl CLI$_PRESENT	bin fixed(31) globalref value;
+dcl CLI$_NEGATED	bin fixed(31) globalref value;
+
+    on error begin;
+	on error system;
+	retcode = oncode();
+        if retcode = SS$_NOPRIV then
+	    retcode = GUR_NOMBAC;
+	goto end_program;
+    end;
+
+    call check_privs();
+
+    retcode = SYS$BINTIM(lit5sec, bin5sec);
+
+    select;
+	when(CLI$PRESENT('START') = CLI$_PRESENT) call cmd_start;
+	when(CLI$PRESENT('STOP')  = CLI$_PRESENT) call cmd_stop;
+	when(CLI$PRESENT('SHOW')  = CLI$_PRESENT) call cmd_show;
+	otherwise				  call cmd_set;
+    end;
+    if ISFAILURE(retcode) then call LIB$SIGNAL(retcode);
+
+end_program:
+    return(retcode);
+     
+/*
+**++
+**  FUNCTIONAL DESCRIPTION:
+**
+**      cmd_start: start a GURIPA process.
+**
+**  FORMAL PARAMETERS:
+**
+**
+**  RETURN VALUE:
+**
+**
+**  SIDE EFFECTS:
+**
+**      This procedure can set the value of the global retcode variable
+**
+**  DESIGN:
+**
+**      This procedure starts GURIPA as a detached process using the
+**	SYS$CREPRC service. It will associate the input and output channels
+**	to NLA0:, and the error channel to GURIPA.ERR (in the default
+**	directory where the program is executing). The newly created
+**	process will have the name _GURIPA_; if there is a process with
+**	that name it will set retcode to the error GUR_RUNNIN. Else it will
+**	output a message with the PID.
+**
+**
+**  ERROR CODES:
+**   
+**  	This procedure can signal conditions returned by SYS$CREPRC, as
+**	well as the mentioned GUR_RUNNIN.
+**   
+**
+**--
+**/
+cmd_start: procedure;
+    dcl 1 cmnd		    like guripa_cmd;
+    dcl pid		    bin fixed(31)   init(0);
+    dcl NLA0		    char(5)	    init('NLA0:');
+    dcl privs		    bit(64) aligned init(''B);
+    dcl 1 privs_s	    like PRVDEF based(addr(privs));
+    dcl prio		    bin fixed(31)   init(4);
+    dcl msg		    char(80)        init('');
+    dcl msgout		    char(80)	    init('');
+    dcl l_msg		    bin fixed(15)   init(0);
+
+    privs_s.PRV$V_WORLD  = '1'B;
+    privs_s.PRV$V_OPER   = '1'B;
+    privs_s.PRV$V_PRMMBX = '1'B;
+
+    retcode = sys$creprc (
+              	  pid, 
+              	  'GURIPA_DIR:GURIPA.EXE',
+		  NLA0,
+		  NLA0, 
+		  'GURIPA.ERR', 
+              	  privs,, 
+              	  '_GURIPA_', 
+              	  prio,,, 
+              	  PRC$M_DETACH,);
+    if retcode = SS$_DUPLNAM then do;
+	rc2 = lib$sys_getmsg(GUR_RUNNIN, l_msg, msg, '11110000'B);
+	put file(sysprint)
+            edit(msg)
+	        (skip,a);
+	retcode = GUR_RUNNIN;
+    end; else do; 
+	rc2 = lib$wait (1.0);
+
+	call open_channel();
+
+	cmnd.code = 'STRT';
+	call get_qualifiers(cmnd);
+	retcode = send_command(cmnd);
+	if ISFAILURE(retcode) then call LIB$SIGNAL(retcode);
+    
+	retcode = get_response(cmnd);
+	if ISFAILURE(retcode) then return;
+
+	call display_status(cmnd);
+
+        rc2 = lib$sys_getmsg (GUR_STRTED, l_msg, msg, '11110000'B,);
+        rc2 = lib$sys_fao (msg, l_msg, msgout, val(pid));    
+	put file(sysprint)
+	    edit(msgout)
+		(skip,a);
+	retcode = GUR_STRTED;  
+
+	rc2 = sys$dassgn (mbxchan);
+
+    end;
+end cmd_start;
+ 
+/*
+[procedure_level_comments]
+**/
+cmd_stop: procedure;
+    dcl 1 cmnd		like guripa_cmd;
+    dcl msg	    char(80)      init(''),
+	l_msg	    bin fixed(15) init(0);
+
+    call open_channel;
+		 
+    cmnd.code = 'EXIT';
+    retcode = send_command(cmnd);
+    if ISFAILURE(retcode) then call LIB$SIGNAL(retcode);
+
+    rc2 = sys$dassgn (mbxchan);
+
+    rc2 = lib$sys_getmsg (GUR_EXITSN, l_msg, msg, '11110000'B,);
+    put file(sysprint)
+	 edit(msg)
+	     (skip,a);
+end cmd_stop;
+ 
+/*
+[procedure_level_comments]
+**/
+cmd_show: procedure;
+    dcl 1 cmnd	    like guripa_cmd;
+
+    call open_channel;
+    
+    cmnd.code = 'SHOW';
+
+    retcode = send_command(cmnd);
+    if ISFAILURE(retcode) then return;
+    
+    retcode = get_response(cmnd);
+    if ISFAILURE(retcode) then return;
+
+    call display_status(cmnd);
+
+    rc2 = sys$dassgn (mbxchan);
+
+end cmd_show;
+ 
+/*
+[procedure_level_comments]
+**/
+cmd_set: procedure;
+    dcl 1 cmnd		like guripa_cmd;
+
+    call open_channel;
+
+    cmnd.code     = 'SET ';
+
+    call get_qualifiers(cmnd);
+
+    retcode = send_command(cmnd);
+    if ISFAILURE(retcode) then return;
+
+    retcode = get_response(cmnd);
+    if ISFAILURE(retcode) then return;
+
+    call display_status(cmnd);
+
+    rc2 = sys$dassgn (mbxchan);
+
+end cmd_set;
+ 
+/*
+[procedure_level_comments]
+**/
+send_command: procedure (cmnd) returns(bin fixed(31));;;
+    dcl 1 cmnd		like guripa_cmd;
+    dcl (eflio,efltim)	bin fixed(31) init(0);
+    dcl 1 iosb,
+	  3 iostat	bin fixed(31) init(0),
+	  3 reserved	bin fixed(31) init(0);
+    dcl timer_id	bin fixed(31) init(3);
+    dcl efl_mask	bit(32) aligned init(''b);
+    dcl rc		bin fixed(31) init(0);
+    dcl efl_stat        bit(32) aligned init(''b);
+
+    rc = LIB$GET_EF(eflio);
+    if ISFAILURE(rc) then call LIB$SIGNAL(rc);
+    rc = LIB$GET_EF(efltim);
+    if ISFAILURE(rc) then call LIB$SIGNAL(rc);
+ 
+    rc = sys$qio (eflio, 
+              	  mbxchan, 
+              	  IO$_WRITEVBLK,
+		  iosb,,, 
+              	  cmnd, 
+              	  128,,,,);   
+    if ISFAILURE(rc) then call LIB$SIGNAL(rc);
+
+    rc = sys$setimr (
+              	  efltim, 
+              	  bin5sec,, 
+              	  timer_id,);
+    if ISFAILURE(rc) then call LIB$SIGNAL(rc);
+
+    substr(efl_mask,mod(eflio ,32)+1,1) = '1'B;
+    substr(efl_mask,mod(efltim,32)+1,1) = '1'B;
+
+    rc = SYS$WFLOR(eflio, efl_mask);    
+    if ISFAILURE(rc) then call LIB$SIGNAL(rc);
+
+    rc = sys$readef (
+             eflio, 
+             efl_stat);
+    
+    rc = LIB$FREE_EF(eflio);
+    rc = LIB$FREE_EF(efltim);
+
+    if iosb.iostat ^= 0 then do;
+	rc = sys$cantim (timer_id,);		  
+	rc = iosb.iostat;
+    end; else do;
+	rc = SYS$CANCEL(mbxchan);
+	rc = GUR_TIMOUT;
+    end;
+    return(rc);
+end send_command;
+
+ 
+/*
+[procedure_level_comments]
+**/
+get_response: procedure(resp) returns(bin fixed(31));
+    dcl 1 resp	        like guripa_cmd;
+    dcl (eflio,efltim)	bin fixed(31) init(0);
+    dcl 1 iosb,
+	  3 iostat	bin fixed(31) init(0),
+	  3 reserved	bin fixed(31) init(0);
+    dcl timer_id	bin fixed(31) init(3);
+    dcl efl_mask	bit(32)	      init(''b);
+    dcl rc		bin fixed(31) init(SS$_NORMAL);
+
+    rc = LIB$GET_EF(eflio);
+    if ISFAILURE(rc) then call LIB$SIGNAL(rc);
+    rc = LIB$GET_EF(efltim);
+    if ISFAILURE(rc) then call LIB$SIGNAL(rc);
+
+    rc = sys$qio(eflio,
+		  mbxchan,
+		  IO$_READVBLK,
+		  iosb,,,
+		  resp,
+		  128,,,,);
+    if ISFAILURE(rc) then call LIB$SIGNAL(rc);
+
+    rc = sys$setimr (
+              	  efltim, 
+              	  bin5sec,, 
+              	  timer_id,);
+    if ISFAILURE(rc) then call LIB$SIGNAL(rc);
+
+    substr(efl_mask,mod(eflio ,32)+1,1) = '1'B;
+    substr(efl_mask,mod(efltim,32)+1,1) = '1'B;
+
+    rc = SYS$WFLOR(eflio, efl_mask);    
+    if ISFAILURE(rc) then call LIB$SIGNAL(rc);
+
+    rc = LIB$FREE_EF(eflio);
+    rc = LIB$FREE_EF(efltim);
+
+    if iosb.iostat ^= 0 then do;
+	rc = sys$cantim (timer_id,);		  
+	rc = iosb.iostat;
+    end; else do;
+	rc = SYS$CANCEL(mbxchan);
+	rc = GUR_TIMOUT;
+    end;
+    return(rc);
+end get_response;
+
+ 
+/*
+[procedure_level_comments]
+**/
+display_status: procedure (cmnd);
+    dcl 1 cmnd		    like guripa_cmd;
+    dcl msg	    char(80)      init(''),
+        msgout	    char(80)      init(''),
+	l_msg	    bin fixed(15) init(0);
+    dcl i_int	    bin fixed(15) init(0);
+
+    i_int = cmnd.interval;
+
+    rc2 = lib$sys_getmsg (GUR_STATUS, l_msg, msg, '11110000'B,);
+    rc2 = lib$sys_fao (msg, l_msg, msgout, val(cmnd.gurpid), 
+					   val(i_int),
+					   val(cmnd.maxidle),
+					   val(cmnd.msgidle));    
+    put file(sysprint)
+	 edit(msgout)
+	     (skip,a);
+end display_status;
+
+ 
+/*
+[procedure_level_comments]
+**/
+get_qualifiers: procedure (cmnd);   
+    dcl 1 cmnd		like guripa_cmd;;
+    dcl wstring		char(80)	init('');
+    dcl lstring		bin fixed(15)	init(0);
+    dcl wnumber		bin fixed(31)	init(0);
+
+    cmnd.interval = -1.0;
+    cmnd.maxidle  = -1;
+    cmnd.msgidle  = -1;
+
+    if CLI$PRESENT('INTERVAL') = CLI$_PRESENT then do;
+	rc2 = CLI$GET_VALUE('INTERVAL',wstring,lstring);
+	cmnd.interval = float(substr(wstring,1,lstring),24);	
+    end;
+    if CLI$PRESENT('MAXIDLE') = CLI$_PRESENT then do;
+	rc2 = CLI$GET_VALUE('MAXIDLE',wstring,lstring);
+	cmnd.maxidle = fixed(substr(wstring,1,lstring),5,0);	
+    end;
+    if CLI$PRESENT('MSGIDLE') = CLI$_PRESENT then do;
+	rc2 = CLI$GET_VALUE('MSGIDLE',wstring,lstring);
+	cmnd.msgidle = fixed(substr(wstring,1,lstring),5,0);		
+    end; else if CLI$PRESENT('MSGIDLE') = CLI$_NEGATED then do;
+	cmnd.msgidle = 0;
+    end;
+
+end get_qualifiers;
+ 
+/*
+[procedure_level_comments]
+**/
+open_channel: procedure;
+
+    retcode = sys$assign (
+              	  mbxname, 
+              	  mbxchan,,);
+    if retcode = SS$_IVDEVNAM | retcode = SS$_IVCHAN then 
+	retcode = GUR_NOTRUN;
+    
+    if ISFAILURE(retcode) then 
+	call LIB$SIGNAL(retcode);
+
+end open_channel;
+
+ 
+/*
+[procedure_level_comments]
+**/
+check_privs: procedure;	
+
+    dcl	privs_char	    char(8)	    init(low(8)),
+	1 privs		    like PRVDEF     based(addr(privs_char));
+
+    rc2 = lib$getjpi (
+              JPI$_CURPRIV,,, 
+              privs_char,,);
+    if ISFAILURE(rc2) then call LIB$SIGNAL(rc2);
+
+    if ^(privs.PRV$V_WORLD & privs.PRV$V_OPER) then call LIB$SIGNAL(GUR_NOPRIV);
+
+end check_privs;
+
+
+
+end GURIPA_CTL;
+
