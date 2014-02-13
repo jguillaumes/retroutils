@@ -1,0 +1,196 @@
+%TITLE 'FORCEX - Force Exit'
+MODULE FORCEX (CODE, IDENT='V01.01', MAIN = doForcex, LANGUAGE(BLISS32)) =
+BEGIN
+!++
+! COMPONENT:
+! 
+!   Utilitats diverses
+! 
+! MODULE DESCRIPTION:
+! 
+!   Aquest programa permet enviar un $FORCEX a un procés per nom o per
+!   PID, o bé enviar un $DELPRC. El $FORCEX provoca la cancel.lació de la
+!   imatge en execució, mentre que $DELPRC mata el procés.
+! 
+! AUTHORS:
+! 
+!   Jordi Guillaumes Pons
+! 
+! CREATION DATE: 16.06.2012
+! 
+! VERSION:
+!  
+!     V01.01 - Nou format comandament DCL
+! 
+! MODIFICATION HISTORY:
+! 
+! V01.00: Primera versió BLISS (prové d'una versió en BASIC)
+! V01.01: Nou format comandament DCL: /IDENT indica que el paràmetre P1
+!	  és un PID
+! [~tbs~]...
+! 
+!--
+
+!
+! TABLE OF CONTENTS:
+!
+!
+! INCLUDE FILES:
+!
+LIBRARY 'SYS$LIBRARY:STARLET';
+
+!
+! MACROS:
+!
+MACRO
+    litPROCNAME =
+    	%ASCID'PROCNAME' %;
+MACRO
+    litPID = %ASCID'PID' %;
+
+MACRO
+    litKILL = %ASCID'KILL' %;
+!
+! EQUATED SYMBOLS
+!
+! OWN STORAGE:
+!
+!
+! EXTERNAL REFERENCES:
+!
+EXTERNAL ROUTINE
+    CLI$PRESENT,
+    CLI$GET_VALUE,
+    LIB$SIGNAL      : ADDRESSING_MODE(GENERAL),
+    LIB$CVT_HTB     : ADDRESSING_MODE(GENERAL),
+    STR$FREE1_DX    : ADDRESSING_MODE(GENERAL);
+
+EXTERNAL LITERAL
+    CLI$_PRESENT;
+
+
+%SBTTL 'Aturada d''una imatge o eliminació d''un procés'
+ROUTINE doForcex = 
+!++
+! FUNCTIONAL DESCRIPTION:
+! 
+!   Obtenció de paràmetres mitjançant la llibreria CLI$ de VMS i execució
+!   del $FORCEX o $DELPRC en funció de la presència del qualificador
+!   /KILL
+! 
+! FORMAL PARAMETERS:
+! 
+!   No hi ha paràmetres formals pròpiament dits
+! 
+! IMPLICIT INPUT PARAMETERS:
+! 
+!   Aquest és un programa principal (MAIN) que rep els paràmetres via CLI$.
+!   La sintaxi es recull a l'arxiu FORCEX_CMD.CLD, i és:
+!
+!   FORCEX [/KILL] [/ID] nomproc|pid
+! 
+! IMPLICIT OUTPUT PARAMETERS:
+! 
+!   No n'hi ha
+! 
+! RETURN VALUE:
+! 
+!   Codi de retorn estàndard VMS
+! 
+! SIDE EFFECTS:
+! 
+!   Provoca la cancel.lació del programa en execució al procés identificat
+!   per nom o per PID, o la cancel.lació del procés sencer si s'especifica
+!   el qualificador /KILL.
+! 
+! DESIGN:
+! 
+!    [~tbs~]
+! 
+! [~logical properties~]
+! 
+! EXCEPTIONS:
+!  
+!     Cal que l'usuari executant tingui drets sobre els processos destí. 
+!     Per identificar un procés per nom cal que sigui propietat de l'usuari
+!     (no n'hi ha prou amb tenir privilegis). Sempre es pot especificar
+!     per PID.
+!--
+
+    BEGIN
+	LOCAL
+	    descPidText : BLOCK [DSC$C_D_BLN, BYTE] PRESET (
+			    [DSC$W_LENGTH] = 0,
+			    [DSC$B_DTYPE]  = DSC$K_DTYPE_T,
+			    [DSC$B_CLASS]  = DSC$K_CLASS_D,
+			    [DSC$A_POINTER] = 0),
+	    descProcName : BLOCK [DSC$C_D_BLN, BYTE] PRESET (
+			    [DSC$W_LENGTH] = 0,
+			    [DSC$B_DTYPE]  = DSC$K_DTYPE_T,
+			    [DSC$B_CLASS]  = DSC$K_CLASS_D,
+			    [DSC$A_POINTER] = 0),
+	    killProc,
+	    statCode,
+	    pid2Kill,
+	    procPresent,
+	    pidPresent,
+	    wordLit :	WORD SIGNED;
+
+	pid2Kill = 0;
+	procPresent = 0;
+	pidPresent = 0;
+	if CLI$PRESENT(litPID) eql CLI$_PRESENT then begin;
+	    pidPresent = 1;
+	    CLI$GET_VALUE(litPID, descPidText);
+	    wordLit = .descPidText[DSC$W_LENGTH];
+	    statCode = LIB$CVT_HTB(.wordLit,
+				   .descPidText[DSC$A_POINTER],
+			 	   pid2Kill);
+	    if not .statCode
+	    then begin;
+		LIB$SIGNAL(SS$_IVIDENT);
+	    end;
+            str$free1_dx(descPidText);
+	end else begin;
+	    if CLI$PRESENT(litPROCNAME) eql CLI$_PRESENT then begin;
+		procPresent = 1;
+		CLI$GET_VALUE(litPROCNAME, descProcName);	    
+	    end;
+	end;
+
+	killProc = 0;
+	if CLI$PRESENT(litKILL) eql CLI$_PRESENT then begin;
+	    killProc = 1;
+        end;
+
+	if (.killProc eql 1) then begin;
+	    if .procPresent neq 0 then begin;
+		statCode = $delprc (
+                            	PIDADR = pid2Kill,
+                            	PRCNAM = descProcName);
+	    end else begin;
+		statCode = $delprc (
+                            	PIDADR = pid2Kill);
+	    end
+	end else begin;
+	    if .procPresent neq 0 then begin;
+		statCode = $forcex (
+                            	PIDADR = pid2Kill,
+                            	PRCNAM = descProcName,
+                            	CODE   = SS$_FORCEDEXIT)
+	    end else begin;
+		statCode = $forcex (
+                            	PIDADR = pid2Kill,
+                            	PRCNAM = 0,
+                            	CODE   = SS$_FORCEDEXIT)
+	    end	    
+	end;
+	if .descProcName[DSC$W_LENGTH] neq 0 then begin;
+	    str$free1_dx(descProcName);
+        end;
+!	if not .statCode then LIB$SIGNAL(.statCode);
+	.statCode
+    END;
+END                           ! End of module
+ELUDOM 
+

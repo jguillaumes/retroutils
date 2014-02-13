@@ -1,0 +1,217 @@
+%TITLE 'FIXTIM - Synch system time to TOD'
+MODULE FIXTIM (CODE, IDENT='V01.01', MAIN = doFixTim, LANGUAGE(BLISS32)) =
+BEGIN
+!++
+! COMPONENT:
+! 
+!   FIXTIM - Set system time to TOD clock
+! 
+! MODULE DESCRIPTION:
+! 
+!   This program invokes the $SETIME service at regular intervals to
+!   synchronize the system clock with the TOD clock. The main uses of
+!   this facility will be to keep a correct system time running under the
+!   simh emulator, which has some time deviation issues.
+! 
+! AUTHORS:
+! 
+!   Jordi Guillaumes Pons
+! 
+! CREATION DATE: 30.04.2013
+! 
+! VERSION:
+!  
+!     V01.01 - Fine-tuning of wake intervals
+! 
+! MODIFICATION HISTORY:
+! 
+! V01.01 - 02.05.2013 - Move $WAKE out of the main loop and use its
+!			repeat parameter to fine-tune the refresh
+!			interval (doing a $WAKE at each loop execution
+!			is not precise).
+!		      - Implement log file (with logical name FIXTIM and
+!			default spec '.LOG').
+! [~tbs~]...
+! 
+!--
+
+!
+! TABLE OF CONTENTS:
+!
+!
+! INCLUDE FILES:
+!
+LIBRARY 'SYS$LIBRARY:STARLET';
+
+REQUIRE 'CHARMACROS.BLI';
+!
+! EQUATED SYMBOLS
+!
+
+!
+! OWN STORAGE:
+!
+
+OWN
+
+    DEFSPEC	: CHAR_VECTOR('.LOG'),
+    MINUTES30	: DESC_STATIC('0000 00:30:00.00'),
+    LOGMSG	: DESC_STATIC('!%T - Clock synchronized.'),
+    STARTMSG	: DESC_STATIC('FIXTIM - Clock syncronization starting.'),
+    DEFLTMSG	: DESC_STATIC('FIXTIM - Using default interval of 30 minutes.');
+!
+! EXTERNAL REFERENCES:
+!
+EXTERNAL ROUTINE
+    LIB$GET_FOREIGN : ADDRESSING_MODE(GENERAL),
+    LIB$PUT_OUTPUT  : ADDRESSING_MODE(GENERAL);
+
+
+%SBTTL 'Synchronize system time with TOD'
+ROUTINE doFixTim = 
+!++
+! FUNCTIONAL DESCRIPTION:
+! 
+!   Clock updater. This routine updates the system clock using the TOY
+!   clock periodically. The update period is got via foreign command,
+!   or prompted to the user. If the user enters no value, the default
+!   is to do the update every 30 minutes.
+! 
+! FORMAL PARAMETERS:
+! 
+! 
+! IMPLICIT INPUT PARAMETERS:
+! 
+! 
+! IMPLICIT OUTPUT PARAMETERS:
+! 
+! 
+! RETURN VALUE:
+! 
+!   This program does not return. It enters an infinite loop and has to be
+!   killed to stop it.
+! 
+! SIDE EFFECTS:
+! 
+!   This program modifies the system clock.
+! 
+! DESIGN:
+! 
+!   The procedure tries to get a delta time value from the user, either
+!   as foreign command or by prompting. This delta time is converted
+!   to binary format (using the default value of 30 minutes if not
+!   specified). The procedure enters then an infinite loop in which:
+!   - It updates the system clock using $SETIME
+!   - It schedules a wakeup using $SCHDWK, so the wakeup occurs at
+!     intervals established before (entered, or 30 minutes default).
+!   - It hibernates itself, waiting for the wakeups
+!   This loop is infinite, and to stop the process it has to be killed.
+! 
+! CLIENT OBLIGATIONS:
+!  
+!     The invoking process must have LOG_IO and OPER privileges enabled
+! 
+!--
+
+    BEGIN
+    LOCAL
+	retlen	     : LONG INITIAL(0),
+	faolen	     : WORD INITIAL(0),
+	retcode	     : LONG INITIAL(SS$_NORMAL) ,
+	charInterval : CHAR_BUFFER(' ',16),
+	descInterval : DESC_FIXED(charInterval,16),
+	interval :  VECTOR[2,LONG] INITIAL(REP 2 OF LONG(0)),
+	buffOut :   CHAR_BUFFER(' ',80),
+	descOut :   DESC_FIXED(buffOut,80),
+	logFAB	:   $fab(dna=DEFSPEC, dns=4, fnm='FIXTIM', 
+		         rfm=VAR, rat=CR, fac=PUT, shr=GET),
+	logRAB  :   $rab(rbf=buffOut, fab=logFAB);
+
+
+    retcode = $create (fab = logFAB);
+    if .retcode then retcode = $connect (rab = logRAB);
+    if not .retcode then SIGNAL(.retcode);
+
+    !+
+    ! Get or prompt for the interval value.
+    ! If not specified (the user pressed <CR> or SYS$INPUT
+    ! was closed), assume 30 minutes
+    !-   
+    retcode = lib$get_foreign (
+              	  descInterval, 
+              	  %ASCID 'Update interval (delta time):',
+		  retlen);
+    if .retcode eql RMS$_EOF then retcode = SS$_NORMAL;
+    if not .retcode then SIGNAL(.retcode);
+
+    if .retlen eql 0 then 
+    begin
+	descInterval[DSC$A_POINTER] = .MINUTES30[DSC$A_POINTER];
+	CH$COPY(.DEFLTMSG[DSC$W_LENGTH],.DEFLTMSG[DSC$A_POINTER],%C' ',80,buffOut);
+	lib$put_output(descOut);
+	logRAB[RAB$W_RSZ] = .DEFLTMSG[DSC$W_LENGTH];
+	retcode = $put (rab = logRAB);
+	if not .retcode then SIGNAL(.retcode);
+    end;    
+
+    !+
+    ! Convert input interval to system format
+    !-
+    retcode = $bintim (
+              	  timbuf = descInterval,
+              	  timadr = interval);
+    if not .retcode then SIGNAL(.retcode);
+
+    CH$COPY(.STARTMSG[DSC$W_LENGTH],.STARTMSG[DSC$A_POINTER],%C' ',80,buffOut);
+    lib$put_output(descOut);
+    logRAB[RAB$W_RSZ] = .STARTMSG[DSC$W_LENGTH];
+    retcode = $put (rab = logRAB);
+    if not .retcode then SIGNAL(.retcode);
+
+    !+
+    ! Schedule process wakeup each "interval".
+    !
+    retcode = $schdwk (daytim = interval,
+                       REPTIM = interval);
+    if not .retcode then SIGNAL(.retcode);	
+    
+    !+
+    ! Infinite loop, this program won't return
+    !-
+    WHILE 1 DO
+	BEGIN
+	!+
+	! Synchronize system time with TOY clock and write a logging
+	! message to SYS$OUTPUT containing the timestamp
+	! ($FAO takes care of that using the !%T specifier).
+	!-
+	retcode = $setime (TIMADR = 0);
+	if not .retcode then SIGNAL(.retcode);	
+	
+	retcode = $fao (
+		    LOGMSG,
+		    faolen, 
+		    descOut,   
+		    0);
+	if not .retcode then SIGNAL(.retcode);	
+
+	logRAB[RAB$W_RSZ] = .faolen;
+	retcode = $put(rab=logRAB);
+	if not .retcode then SIGNAL(.retcode);
+	lib$put_output(descOut);
+
+	!+
+	! Hibernate the process
+	!-	
+	retcode = $hiber;
+	if not .retcode then SIGNAL(.retcode);	
+	
+	END;    
+
+    $close (fab=logFAB);
+    .retcode
+    END;
+
+END                           ! End of module
+ELUDOM 
+

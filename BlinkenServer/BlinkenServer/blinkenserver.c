@@ -21,7 +21,7 @@
 
 #ifdef HAS_BLINKEN
 #include "wiringPi.h"
-#include "wiringShift.h"
+// #include "wiringShift.h"
 #endif
 
 static unsigned char oldBits[32];
@@ -52,9 +52,13 @@ int startup(WORD numPort, int timeoutmilis) {
         syslog(LOG_ERR, "Error setting up wiringPi (%m)");
         return -1;
     }
-    pinMode(CLOCK,OUTPUT);
+
     pinMode(LATCH,OUTPUT);
-    pinMode(DATA,OUTPUT);
+    
+    if (wiringPiSPISetup(SPIBUS,SPISPEED) < 0) {
+      syslog(LOG_ERR,"Error setting up SPI bus (%m)");
+      return -1;
+    }
     
 #else
 #warning Compiling without real Blinken Lights...
@@ -145,7 +149,8 @@ void setBlinken(PPAYLOAD payload) {
 #ifdef HAS_BLINKEN
     int indicators = 0;
     int par = 0;
-    
+    const int ones=0xFF;
+
     payload->numDataBytes  = ntohs(payload->numDataBytes);
     payload->numAddrBytes  = ntohs(payload->numAddrBytes);
     payload->numOtherBytes = ntohs(payload->numOtherBytes);
@@ -154,7 +159,8 @@ void setBlinken(PPAYLOAD payload) {
     digitalWrite(LATCH,LOW);
     if (payload->bflags & BLF_TEST) {
         for (i=0; i<payload->numDataBytes; i++) {
-            shiftOut(DATA,CLOCK,MSBFIRST, 0xFF);
+	  wiringPiSPIDataRW(SPIBUS, &ones, 1);
+	  // shiftOut(DATA,CLOCK,MSBFIRST, 0xFF);
         }
     } else {
         if (payload->bflags & BLF_ERROR) {
@@ -169,10 +175,14 @@ void setBlinken(PPAYLOAD payload) {
             } else {
                 indicators = (par % 2) & 0x0001;
             }
+	    wiringPiSPIDataRW(SPIBUS, &indicators, 1);
+	    wiringPiSPIDataRW(SPIBUS, oldBits, payload->numDataBytes);
+	    /*
             shiftOut(DATA,CLOCK,MSBFIRST,indicators);
             for (i=0; i<payload->numDataBytes; i++) {
                 shiftOut(DATA,CLOCK,MSBFIRST,oldBits[i]);
             }
+	    */
         }
         digitalWrite(LATCH,HIGH);
     }
