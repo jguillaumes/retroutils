@@ -184,7 +184,7 @@ int blk_udpSendWord(PBLINKENSTATUS pblk, WORD w, int resync) {
     packet.payload.numDataBytes= htons(2);  // Size, in network order
     packet.function = htons(BLK_DATA);
     packet.flags    = resync ? htons(FLG_RESYNC) : 0;
-    packet.sequence = resync ? 1          : htonl(++(pblk->conn.udp_status.sequence));
+    packet.sequence = resync ? 1 : htonl(++(pblk->conn.udp_status.sequence));
     packet.payload.data[0] = thebytes[0];   // copy first byte
     packet.payload.data[1] = thebytes[1];   // copy second byte
     return (int) sendto(pblk->conn.udp_status.socket, &packet, sizeof(packet),
