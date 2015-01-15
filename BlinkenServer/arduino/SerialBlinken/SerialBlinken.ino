@@ -1,3 +1,26 @@
+/**
+Connexió plaqueta blinkenlights
+
+Leonardo/Micro:
+
+Groc: MOSI
+Vermell: D	12
+Taronja: CLK
+
+Marró: GROUND
+Verd: +5/+3.3V
+
+================
+
+UNO:
+
+================
+
+MEGA:
+
+**/
+
+
 #include <SPI.h>
 #include <util/parity.h>
 /*
