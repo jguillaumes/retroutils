@@ -1,3 +1,28 @@
+/**
+Connexió plaqueta blinkenlights
+
+Leonardo/Micro:
+
+Groc: MOSI
+Vermell: D	12
+Taronja: CLK
+
+Marró: GROUND
+Verd: +5/+3.3V
+
+================
+
+UNO:
+
+================
+
+MEGA:
+
+**/
+
+
+#include <SPI.h>
+#include <util/parity.h>
 /*
  * Payload (bits) flags
  */
@@ -21,16 +46,35 @@ struct s_payload {
 };
 #pragma pack()
 
-const int DATA=10;
-const int CLOCK=11;
 const int LATCH=12;
 
 int nval=0;
 long ledstate=0;
+int leddirection=0;
 unsigned char val[16];
 unsigned char err[3];
 struct s_payload *payload;
 int testMode = 0;
+
+/*
+** Setup the arduino board
+ */
+void setup() {
+  pinMode(LED_PIN,OUTPUT);
+  pinMode(LATCH,OUTPUT);
+  pinMode(TEST_BUTTON,INPUT_PULLUP);
+  SPI.begin();
+  Serial.begin(TTY_SPEED);
+  Serial.setTimeout(5000);
+  attachInterrupt(1, buttonAction, CHANGE);
+  for(int i=0; i<16; i++) {
+    val[i] = 0;
+  }
+  err[0] = 255;
+  err[1] = 255;
+  err[2] = 255;
+}
+
 
 /*
 * Interrupt routine to handle the "press to test" button
@@ -54,9 +98,9 @@ void liteDataBytes(int stat, int numBytes, unsigned char *v) {
   unsigned char *ptr = v;
 
   digitalWrite(LATCH,LOW);
-  shiftOut(DATA,CLOCK,MSBFIRST,stat);
+  SPI.transfer(stat);
   for (int i=0; i<numBytes; i++) {
-    shiftOut(DATA,CLOCK, MSBFIRST, *ptr++);
+    SPI.transfer(*ptr++);
   }
   digitalWrite(LATCH,HIGH);
 }
@@ -75,39 +119,6 @@ int parity(unsigned char c) {
   return p % 2;
 }
 
-/*
-** Compute the parity for an array of bytes
- */
-unsigned int blockParity(int n, unsigned char *v) {
-  unsigned char *ptr=v;
-  unsigned char p=0;
-  unsigned int par=0;
-
-  for(int i=0; i<n; i++) {
-    p += parity(*ptr++);
-  }
-  return p % 2;
-}
-
-/*
-** Setup the arduino board
- */
-void setup() {
-  pinMode(LED_PIN,OUTPUT);
-  pinMode(DATA,OUTPUT);
-  pinMode(CLOCK,OUTPUT);
-  pinMode(LATCH,OUTPUT);
-  pinMode(TEST_BUTTON,INPUT_PULLUP);
-  Serial.begin(TTY_SPEED);
-  Serial.setTimeout(5000);
-  attachInterrupt(1, buttonAction, CHANGE);
-  for(int i=0; i<16; i++) {
-    val[i] = 0;
-  }
-  err[0] = 255;
-  err[1] = 255;
-  err[2] = 255;
-}
 
 /*
 ** Main loop
@@ -154,13 +165,13 @@ void processPayload() {
     liteDataBytes(255, payload->numDataBytes, val);
   } 
   else if ((payload->bFlags & BLF_ERROR) != 0) {
-    liteDataBytes(2, payload->numDataBytes, val);
+    liteDataBytes(4, payload->numDataBytes, val);
   } 
   else {
     for (int i=0; i<payload->numDataBytes; i++) {
       val[i] = payload->data[i];
       if ((payload->bFlags & BLF_NOPARITY) == 0) {
-        p = blockParity(payload->numDataBytes, val);
+        p = 2*p + parity_even_bit(val[i]);
       } 
       else {
         p = 0;
@@ -174,14 +185,17 @@ void processPayload() {
 ** Heartbeat in on-board LED
  */
 void blinkLed() {
-  if (ledstate < 50000) {
-    digitalWrite(LED_PIN,HIGH);
+    analogWrite(LED_PIN, ledstate / 20);
+  if (leddirection == 0) {
     ledstate++;
-  } 
-  else {
-    digitalWrite(LED_PIN,LOW);
-    ledstate++;
-    if (ledstate > 100000) ledstate = 0;
+    if (ledstate > 5120) {
+      leddirection = 1;
+    }
+  } else {
+    ledstate--;
+    if (ledstate <= 0) {
+      leddirection = 0;
+    } 
   }
 }
 

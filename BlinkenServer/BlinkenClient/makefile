@@ -2,6 +2,9 @@ INSTALL_ROOT=/usr/local
 CC=cc
 CFLAGS=
 LDFLAGS=
+INSTALL_ROOT := /usr/local
+UOWNER := root
+GOWNER := wheel
 
 C_FILES := $(wildcard *.c)
 OBJS := $(patsubst %.c, %.o, $(C_FILES))
@@ -26,10 +29,10 @@ clean:
 	rm -f .depend *.o
  
 install: libblinken.a $(HEADERS)
-	install -d -g root -o root -v $(INSTALL_ROOT)/include
-	install -d -g root -o root -v $(INSTALL_ROOT)/lib
-	install -b -C -v -o root libblinken.a $(INSTALL_ROOT)/lib
-	install -b -C -v -o root $(HEADERS) $(INSTALL_ROOT)/include
+	install -d -g $(GOWNER) -o $(UOWNER) -v $(INSTALL_ROOT)/include
+	install -d -g $(GOWNER) -o$(UOWNER) -v $(INSTALL_ROOT)/lib
+	install -b -C -v -o $(UOWNER) libblinken.a $(INSTALL_ROOT)/lib
+	install -b -C -v -o $(UOWNER) $(HEADERS) $(INSTALL_ROOT)/include
 
 .PHONY:	clean depend install
 
