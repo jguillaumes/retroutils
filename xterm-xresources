@@ -1,0 +1,46 @@
+XTerm*background: black
+XTerm*foreground: green
+XTerm.vt100.colorBDMode: true
+XTerm.vt100.colorBD: cyan
+!XTerm.vt100.colorRVmode: true
+!XTerm.vt100.colorRV: cyan
+XTerm.vt100.cursorBlink: true
+XTerm.vt100.decTerminalID: vt220
+XTerm.vt100.faceName: Lucida Console
+XTerm.vt100.faceSize: 10.0
+XTerm.vt100.c132: True
+!XTerm.vt100.keyboardType: vt220
+XTerm.vt100.scrollBar: true
+XTerm.vt100.rightScrollBar: true
+XTerm.vt100.translations: #override \
+	  <Key>F8: string(0x1b) string("OP") \n\
+          <Key>F9: string(0x1b) string("OQ") \n\
+          <Key>F10: string(0x1b) string("OR") \n\
+          <Key>F11: string(0x1b) string("OS") \n\
+          <Key>BackSpace: string(0x7f) \n\
+          <Key>Num_Lock: string(0x1b) string("OP") \n\
+          <Key>KP_Divide: string(0x1b) string("OQ") \n\
+          <Key>KP_Multiply: string(0x1b) string("OR") \n\
+          <Key>KP_Subtract: string(0x1b) string("OS") \n\
+          <Key>KP_Add: string(0x1b) string("Ol") \n\
+          <Key>KP_Enter: string(0x1b) string("OM") \n\
+          <Key>KP_Decimal: string(0x1b) string("On") \n\
+          <Key>KP_0: string(0x1b) string("Op") \n\
+          <Key>KP_1: string(0x1b) string("Oq") \n\
+          <Key>KP_2: string(0x1b) string("Or") \n\
+          <Key>KP_3: string(0x1b) string("Os") \n\
+          <Key>KP_4: string(0x1b) string("Ot") \n\
+          <Key>KP_5: string(0x1b) string("Ou") \n\
+          <Key>KP_6: string(0x1b) string("Ov") \n\
+          <Key>KP_7: string(0x1b) string("Ow") \n\
+          <Key>KP_8: string(0x1b) string("Ox") \n\
+          <Key>KP_9: string(0x1b) string("Oy") \n\
+	  <Key>KP_End: string(0x1b) string("[4~") \n\
+	  <Key>KP_Home: string(0x1b) string("[1~") \n\
+	  <Key>Select: string(0x1b) string("[4~") \n\
+	  <Key>Find: string(0x1b) string("[1~")
+
+!XTerm.vt100.locale: false
+!XTerm.vt100.keyboardDialect: Z
+!XTerm.vt100.appcursorDefault: True
+!XTerm.vt100.appkeypadDefault: True
