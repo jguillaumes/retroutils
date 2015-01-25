@@ -3,8 +3,8 @@ Connexió plaqueta blinkenlights
 
 Leonardo/Micro:
 
-Groc: MOSI
-Vermell: D	12
+Groc:    MOSI
+Vermell: D12
 Taronja: CLK
 
 Marró: GROUND
