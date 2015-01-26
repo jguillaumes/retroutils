@@ -8,17 +8,15 @@
 
  Prototype board header pins
  ===========================
-
  *
  * Display module
  *
- 01-07 -> DB15-DB8 -> 29-22
- 08 (NC)
- 09 ->
- 10 ->
- 11 ->
- 12 ->
- 13 ->
+ 01-08 -> DB15-DB8 -> 29-22
+ 09 (NC)
+ 10 -> WR -> 40
+ 11 -> RS -> 41
+ 12 -> RST-> 38
+ 13 -> CS -> 39
 
  *
  * Ethernet module
