@@ -19,13 +19,19 @@
 #include <unistd.h>
 #include <getopt.h>
 #include <signal.h>
+#include <setjmp.h>
 #include <sys/time.h>
 
 #include "DecnetListener.h"
+#include "commands.h"
 
 #define DEBUG 0
 
 FILE *capture;          /* Packet capture file */
+int cont;               /* Continue flag       */
+static int invokeCommands = 0;
+extern FILE *yyin;
+sigjmp_buf env;
 
 /*
  * Basic syntax help
@@ -40,17 +46,11 @@ void help() {
  */
 void intHandler(int sig) {
     signal(sig, SIG_IGN);
-    printf("CTRL-C pressed...\n");
-    if (capture != NULL) {
-        printf("Closing capture file...\n");
-        fclose(capture);
-    }
-    exit(0);
+    invokeCommands = 1;
+    siglongjmp(env,0);
 }
 
-
-int main(int argc,
-        char ** argv) {
+int main(int argc, char ** argv) {
     char * iface = NULL;
     int i, j;
     int c;
@@ -126,10 +126,29 @@ int main(int argc,
     /*
      * Infinite loop, breakable using CTRL-C
      */
-    while (1 == 1) {
+    cont = 1;
+loop:
+    while (cont != 0) {
         hello = NULL;
         frame = NULL;
+
+        sigsetjmp(env,1);
         
+        if (invokeCommands == 1) {
+            printf("\nSuspending process...\n");
+
+            cont = parseCommands(stdin,stdout);
+
+            if (cont != 0) {
+                invokeCommands = 0;
+                signal(SIGINT,intHandler);
+                printf("\nResuming process...\n");
+            } else {
+                printf("\nFinishing process...\n");
+                break;
+            }
+        }
+
         /*
          * Capture a packet and establish pointer to the captured frame
          */
@@ -140,7 +159,7 @@ int main(int argc,
         printf("Src: %d.%d | ", AREA(dnFromMac(frame -> dst)), NODE(dnFromMac(frame -> dst)));
 #endif
         /*
-         * Establis pointer to (possible) ethertype
+         * Establish pointer to (possible) ethertype
          */
         etherType = ((void *) packet) + OFS_ETHERTYPE;
 #if (DEBUG == 1)
@@ -203,7 +222,10 @@ int main(int argc,
             }
         }
     }
-
+    if (capture != NULL) {
+        printf("Closing capture file...\n");
+        fclose(capture);
+    }
     return (EXIT_SUCCESS);
 }
 

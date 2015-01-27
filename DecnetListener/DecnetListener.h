@@ -28,8 +28,8 @@ extern "C" {
     typedef unsigned char BYTE;
     typedef unsigned short WORD;
     typedef unsigned int LONGWORD;
-    typedef BYTE MACADDR[6];
-    typedef WORD DNADDR;
+    typedef BYTE ETHADDR[6];
+    typedef WORD DECADDR;
 
     
 #pragma pack(1)
@@ -62,7 +62,7 @@ extern "C" {
      */
     struct init_t {
         struct routing_flags_s routingFlags;
-        DNADDR srcNode;
+        DECADDR srcNode;
         struct node_flags_s nodeInfo;
         WORD blkSize;
         BYTE version[3];
@@ -76,14 +76,14 @@ extern "C" {
         struct routing_flags_s routingFlags;
         BYTE version[3];
         BYTE filler[4];
-        DNADDR dnAddr;
+        DECADDR dnAddr;
         struct node_flags_s nodeInfo;
         WORD blkSize;
         union {
             struct __attribute__((packed)) {
                 BYTE area;
                 BYTE seed[8];
-                MACADDR designatedRouter;
+                ETHADDR designatedRouter;
                 WORD helloTimer;
                 BYTE reserved;
                 BYTE data[0];
@@ -94,7 +94,7 @@ extern "C" {
                 WORD helloTimer;
                 BYTE reserved;
                 struct __attribute__((packed)) {
-                    MACADDR router;
+                    ETHADDR router;
                     BYTE priState;
                 } eList[0];
             } router;
@@ -105,8 +105,8 @@ extern "C" {
      *  Ethernet frame
      */ 
     struct frame_s {
-        MACADDR src;
-        MACADDR dst;
+        ETHADDR src;
+        ETHADDR dst;
         union {
             struct {
                 WORD etherType;

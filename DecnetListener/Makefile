@@ -48,17 +48,17 @@
 MKDIR=mkdir
 CP=cp
 CCADMIN=CCadmin
-
+LEXX=flex
+YACC=bison
 
 # build
 build: .build-post
 
-.build-pre:
+.build-pre: 
 # Add your pre 'build' code here...
 
 .build-post: .build-impl
-# Add your post 'build' code here...
-
+	size ${CND_ARTIFACT_PATH_${CONF}}
 
 # clean
 clean: .clean-post
@@ -67,8 +67,6 @@ clean: .clean-post
 # Add your pre 'clean' code here...
 
 .clean-post: .clean-impl
-# Add your post 'clean' code here...
-
 
 # clobber
 clobber: .clobber-post
