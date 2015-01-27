@@ -9,5 +9,21 @@ bin2load:	Tool to convert an a.out executable or a memory binary image
 		file to the format that the "load" command of the PDP-11
 		simulator understands ("paper tape format")
 
+BlinkenServer: Hardware implementation of a "blinkenlights" display for the SIMH pdp11. Contains a GPIO based version
+               (to be used with a Raspberry Pi) and a Serial based (to be used with an arduino).
+
 JBlinkenServer:	Software implementation of a "blinkenlights" console for the SIMH pdp-11
 
+simh-patches: Patches for the SIMH pdp-11 simulator to use the blinkenlights stuff. NOT RECOMMENDED. Use my own branch of
+              SIMH at github.com/jguillaumes/simh
+              
+vaxtools: Several VMS utilities (idle process killer, clock adjuster, "mainframe like" hex file dumper.
+
+DecnetListener: Pcap-based sniffer for DECNET hello packets.
+
+DecnetDisplay: Arduino sketch to drive a ILI9325C based TFT display and an ENC28J60 ethernet adapter to monitor
+               and display DECNET adjacencies. Requires an Arduino Mega 2560 or an Arduino DUE (not tested).
+               
+====
+
+xterm-xresources: .xresources file to make xterm similar to a VT220.
