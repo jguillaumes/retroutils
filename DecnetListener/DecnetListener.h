@@ -31,10 +31,13 @@ extern "C" {
     typedef BYTE MACADDR[6];
     typedef WORD DNADDR;
 
+    
+#pragma pack(1)
+    
     /*
      * Routing flags
      */
-    struct __attribute__((packed)) routing_flags_s {
+    struct routing_flags_s{
         unsigned int ctype :1;
         unsigned int type :3;
         unsigned int filler :3;
@@ -44,7 +47,7 @@ extern "C" {
     /*
      * Node type and message flags
      */
-    struct __attribute__((packed)) node_flags_s {
+    struct node_flags_s {
         unsigned int nodeType :2;
         unsigned int verificationRequired :1;
         unsigned int rejectFlag :1;
@@ -57,7 +60,7 @@ extern "C" {
     /*
      * Init message
      */
-    struct __attribute__((packed)) init_t {
+    struct init_t {
         struct routing_flags_s routingFlags;
         DNADDR srcNode;
         struct node_flags_s nodeInfo;
@@ -69,42 +72,58 @@ extern "C" {
     /*
      * Hello message
      */
-    struct __attribute__((packed)) hello_t {
+    struct hello_t {
         struct routing_flags_s routingFlags;
         BYTE version[3];
         BYTE filler[4];
         DNADDR dnAddr;
         struct node_flags_s nodeInfo;
         WORD blkSize;
-        BYTE area;
-        BYTE seed[8];
-        MACADDR designatedRouter;
-        WORD helloTimer;
-        BYTE reserved;
-        BYTE data[1];
+        union {
+            struct __attribute__((packed)) {
+                BYTE area;
+                BYTE seed[8];
+                MACADDR designatedRouter;
+                WORD helloTimer;
+                BYTE reserved;
+                BYTE data[0];
+            } endNode;
+            struct __attribute__((packed)) {
+                BYTE priority;
+                BYTE area;
+                WORD helloTimer;
+                BYTE reserved;
+                struct __attribute__((packed)) {
+                    MACADDR router;
+                    BYTE priState;
+                } eList[0];
+            } router;
+        } u;
     };
 
     /*
      *  Ethernet frame
      */ 
-    struct __attribute__((packed)) frame_s {
+    struct frame_s {
         MACADDR src;
         MACADDR dst;
         union {
             struct {
                 WORD etherType;
                 WORD length;
-                struct hello_t hello;
+                BYTE payload[0];
             } nonTagged;
             struct {
                 WORD vlanType;
                 WORD etherType;
                 WORD length;
-                struct hello_t hello;
+                BYTE payload[0];
             } tagged;
         } u;
     };
 
+#pragma pack()
+    
     /*
      * Forward declarations
      */

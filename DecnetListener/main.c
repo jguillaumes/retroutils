@@ -217,10 +217,11 @@ void processHello(struct hello_t *hello) {
     printf("HELLO packet from %2d.%-4d, type=%-14s(%d), rtype=(%d) ", AREA(hello -> dnAddr), NODE(hello -> dnAddr), type,
             hello -> nodeInfo.nodeType, hello -> routingFlags.type);
 
+    
     if (hello -> nodeInfo.nodeType == 3) {
-        printf(" DR: %d.%d\n", AREA(dnFromMac(hello -> designatedRouter)), NODE(dnFromMac(hello -> designatedRouter)));
+        printf(" Timer: %d DR: %d.%d\n", hello->u.endNode.helloTimer,AREA(dnFromMac(hello -> u.endNode.designatedRouter)), NODE(dnFromMac(hello -> u.endNode.designatedRouter)));
     } else {
-        printf("\n");
+        printf(" Timer: %d Prio: %d\n", hello->u.router.helloTimer, hello->u.router.priority);
     }
 }
 
