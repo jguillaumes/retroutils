@@ -2,6 +2,8 @@
  * File:   PcapReader.h
  * Author: jguillaumes
  *
+ * PCAP packet reader
+ * 
  * Created on 29 / gener / 2015, 11:11
  */
 

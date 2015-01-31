@@ -35,6 +35,7 @@ bool BasicHandler::handleHello(const BYTE *packet) {
         // printf(" Timer: %d Prio: %d\n", hello->u.router.helloTimer, hello->u.router.priority);
     }
     std::cout << std::endl;
+    return true;
 }
 
 /*

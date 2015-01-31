@@ -2,19 +2,30 @@
  * File:   DecnetDefs.h
  * Author: jguillaumes
  *
+ * Definitions (constants, types and structures) to handle DECNET packets
+ * 
  * Created on 28 / gener / 2015, 23:29
  */
 
 #ifndef DECNETDEFS_H
 #define	DECNETDEFS_H
 
+/*
+ * Macros to extract area and node from a decnet address word
+ */
 #define NODE(addr)  ((addr)&0b1111111111)
 #define AREA(addr)  ((addr)>>10)
 
+/*
+ * Offsets into the ethernet frame
+ */
 #define OFS_ETHERTYPE       12
 #define OFS_FRAMESIZE       14
 #define OFS_FRAME           16
 
+/*
+ * Ethertype words
+ */
 #define ET_DNETROUTING      0x0360
 #define ET_VLANTAG          0x0081
 
