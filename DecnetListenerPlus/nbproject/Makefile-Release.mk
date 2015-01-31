@@ -35,9 +35,11 @@ OBJECTDIR=${CND_BUILDDIR}/${CND_CONF}/${CND_PLATFORM}
 
 # Object Files
 OBJECTFILES= \
-	${OBJECTDIR}/DecnetFileSaver.o \
+	${OBJECTDIR}/BasicHandler.o \
 	${OBJECTDIR}/DecnetListener.o \
 	${OBJECTDIR}/DecnetListenerPcap.o \
+	${OBJECTDIR}/FileSaver.o \
+	${OBJECTDIR}/PcapReader.o \
 	${OBJECTDIR}/main.o
 
 
@@ -65,10 +67,10 @@ ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/decnetlistenerplus: ${OBJECTFILES}
 	${MKDIR} -p ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}
 	${LINK.cc} -o ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/decnetlistenerplus ${OBJECTFILES} ${LDLIBSOPTIONS}
 
-${OBJECTDIR}/DecnetFileSaver.o: DecnetFileSaver.cpp 
+${OBJECTDIR}/BasicHandler.o: BasicHandler.cpp 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
-	$(COMPILE.cc) -O2 -s -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/DecnetFileSaver.o DecnetFileSaver.cpp
+	$(COMPILE.cc) -O2 -s -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/BasicHandler.o BasicHandler.cpp
 
 ${OBJECTDIR}/DecnetListener.o: DecnetListener.cpp 
 	${MKDIR} -p ${OBJECTDIR}
@@ -79,6 +81,16 @@ ${OBJECTDIR}/DecnetListenerPcap.o: DecnetListenerPcap.cpp
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
 	$(COMPILE.cc) -O2 -s -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/DecnetListenerPcap.o DecnetListenerPcap.cpp
+
+${OBJECTDIR}/FileSaver.o: FileSaver.cpp 
+	${MKDIR} -p ${OBJECTDIR}
+	${RM} "$@.d"
+	$(COMPILE.cc) -O2 -s -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/FileSaver.o FileSaver.cpp
+
+${OBJECTDIR}/PcapReader.o: PcapReader.cpp 
+	${MKDIR} -p ${OBJECTDIR}
+	${RM} "$@.d"
+	$(COMPILE.cc) -O2 -s -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/PcapReader.o PcapReader.cpp
 
 ${OBJECTDIR}/main.o: main.cpp 
 	${MKDIR} -p ${OBJECTDIR}

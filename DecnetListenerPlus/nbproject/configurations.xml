@@ -4,11 +4,16 @@
     <logicalFolder name="HeaderFiles"
                    displayName="Header Files"
                    projectFiles="true">
+      <itemPath>BasicHandler.h</itemPath>
       <itemPath>DecnetDefs.h</itemPath>
-      <itemPath>DecnetFileSaver.h</itemPath>
       <itemPath>DecnetListener.h</itemPath>
       <itemPath>DecnetListenerPcap.h</itemPath>
       <itemPath>DecnetListenerPlus.h</itemPath>
+      <itemPath>FileSaver.h</itemPath>
+      <itemPath>PacketHandler.h</itemPath>
+      <itemPath>PacketReader.h</itemPath>
+      <itemPath>PacketSaver.h</itemPath>
+      <itemPath>PcapReader.h</itemPath>
     </logicalFolder>
     <logicalFolder name="ResourceFiles"
                    displayName="Resource Files"
@@ -17,9 +22,11 @@
     <logicalFolder name="SourceFiles"
                    displayName="Source Files"
                    projectFiles="true">
-      <itemPath>DecnetFileSaver.cpp</itemPath>
+      <itemPath>BasicHandler.cpp</itemPath>
       <itemPath>DecnetListener.cpp</itemPath>
       <itemPath>DecnetListenerPcap.cpp</itemPath>
+      <itemPath>FileSaver.cpp</itemPath>
+      <itemPath>PcapReader.cpp</itemPath>
       <itemPath>main.cpp</itemPath>
     </logicalFolder>
     <logicalFolder name="TestFiles"
@@ -33,6 +40,7 @@
                    kind="IMPORTANT_FILES_FOLDER">
       <itemPath>Makefile</itemPath>
     </logicalFolder>
+    <itemPath>DecnetListener.puml</itemPath>
   </logicalFolder>
   <projectmakefile>Makefile</projectmakefile>
   <confs>
@@ -49,21 +57,37 @@
           </linkerLibItems>
         </linkerTool>
       </compileType>
+      <item path="BasicHandler.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="BasicHandler.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="DecnetDefs.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="DecnetFileSaver.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="DecnetFileSaver.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="DecnetListener.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="DecnetListener.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="DecnetListener.puml" ex="false" tool="3" flavor2="0">
       </item>
       <item path="DecnetListenerPcap.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="DecnetListenerPcap.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="DecnetListenerPlus.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="FileSaver.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="FileSaver.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="PacketHandler.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="PacketReader.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="PacketSaver.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="PcapReader.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="PcapReader.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="main.cpp" ex="false" tool="1" flavor2="0">
       </item>
@@ -95,21 +119,37 @@
           </linkerLibItems>
         </linkerTool>
       </compileType>
+      <item path="BasicHandler.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="BasicHandler.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="DecnetDefs.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="DecnetFileSaver.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="DecnetFileSaver.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="DecnetListener.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="DecnetListener.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="DecnetListener.puml" ex="false" tool="3" flavor2="0">
       </item>
       <item path="DecnetListenerPcap.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="DecnetListenerPcap.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="DecnetListenerPlus.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="FileSaver.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="FileSaver.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="PacketHandler.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="PacketReader.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="PacketSaver.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="PcapReader.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="PcapReader.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="main.cpp" ex="false" tool="1" flavor2="0">
       </item>
@@ -141,21 +181,37 @@
           </linkerLibItems>
         </linkerTool>
       </compileType>
+      <item path="BasicHandler.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="BasicHandler.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="DecnetDefs.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="DecnetFileSaver.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="DecnetFileSaver.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="DecnetListener.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="DecnetListener.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="DecnetListener.puml" ex="false" tool="3" flavor2="0">
       </item>
       <item path="DecnetListenerPcap.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="DecnetListenerPcap.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="DecnetListenerPlus.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="FileSaver.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="FileSaver.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="PacketHandler.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="PacketReader.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="PacketSaver.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="PcapReader.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="PcapReader.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="main.cpp" ex="false" tool="1" flavor2="0">
       </item>

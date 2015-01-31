@@ -8,20 +8,17 @@
 #ifndef DECNETLISTENERPCAP_H
 #define	DECNETLISTENERPCAP_H
 
-#include "DecnetFileSaver.h"
+#include "FileSaver.h"
 
 
-class DecnetListenerPcap :  public DecnetFileSaver {
+class DecnetListenerPcap :  public DecnetListener {
 public:
     DecnetListenerPcap(const std::string& iface, const std::string &fileName);
     ~DecnetListenerPcap();
 
 private:
-    pcap_t *handle;
-
+    
 protected:
-    const static std::string capFilter;
-    const virtual BYTE *capturePacket(int &size);
 };
 
 

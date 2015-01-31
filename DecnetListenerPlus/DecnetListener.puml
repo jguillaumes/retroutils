@@ -1,0 +1,97 @@
+@startuml
+DecnetListener "1" *-- "1" PacketHandler   
+DecnetListener "1" *-- "1" PacketReader
+DecnetListener "1" *-- "1" PacketSaver
+DecnetListenerPcap "1" *-- "1" BasicHandler
+DecnetListenerPcap "1" *-- "1" PcapReader 
+DecnetListenerPcap "1" *-- "1" FileSaver
+
+BasicHandler <|-- PacketHandler
+FileSaver <|-- PacketSaver
+PcapReader <|-- PacketReader
+DecnetListenerPcap <|-- DecnetListener
+
+class DecnetListener {
+	-saveAll
+	-cont
+	-doCmds
+	#packetHandler
+	#packetReader
+	#packetSaver
+
+	+setPacketReader(PacketReader *)	
+	+setPacketHandler(PacketHandler *)
+	+setSaveAll(boolean)
+	+string getMsgError()
+	+bool isSaving()
+	+bool isCapturing()
+	+void captureLoop()
+}
+
+class DecnetListenerPcap {
+    +DecnetListenerPcap(string& iface, string &fileName);
+    +~DecnetListenerPcap()
+}
+
+class PacketReader {
+	#capturing
+	#msgError
+	
+	+PacketReader()
+	+~PacketReader()
+	+string getMsgError()
+	+bool isCapturing()
+	+{abstract} BYTE *capurePacket(int &size)
+
+}
+
+class PcapReader {
+	-*handle;
+	+PcapReader(const std::string& iface);
+	+~PcapReader();
+
+	-{static}string capFilter;
+	+const BYTE *capturePacket(int &size);
+}
+
+class PacketSaver {
+	+PacketSaver()
+	+~PacketSaver()
+	+bool isSaving()
+	+string getMsgError()
+	+savePacket(const BYTE *packet, int size)
+	
+}
+
+class FileSaver {
+    -string msgError
+    -ofstream capfile
+    -bool fileOpened
+
+    +FileSaver(const std::string &filename)
+    +~FileSaver()
+    +savePacket(const BYTE *packet, int size)
+    +bool isFileOpened()
+    +bool virtual isSaving()
+    +string getMsgError()
+
+}
+
+class PacketHandler {
+	+PacketHandler()
+	+~PacketHandler()
+	+bool handleHello(const BYTE *packet)
+	+bool handleInit(const BYTE *packet)
+	+bool handleRouting(const BYTE *packet)
+	+bool handleUnknown(const BYTE *packet)
+}
+
+class BasicHandler {
+	+BasicHandler()
+	+~BasicHandler()
+	-string typeName(unsigned int nodetype);
+	+bool handleHello(const BYTE* packet);
+}
+
+
+@enduml

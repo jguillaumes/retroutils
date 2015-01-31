@@ -10,10 +10,12 @@
 #include <iostream>
 
 #include <sys/time.h>
+#include <errno.h>
+#include <string.h>
 
-#include "DecnetFileSaver.h"
+#include "FileSaver.h"
 
-DecnetFileSaver::DecnetFileSaver(const std::string &fileName) {
+FileSaver::FileSaver(const std::string &fileName) {
     static const int   magic = 0xa1b2c3d4;  /* Magic number */
     static const short major = 0x02;        /* Version (major) */
     static const short minor = 0x04;        /* Version (minor) */
@@ -37,10 +39,12 @@ DecnetFileSaver::DecnetFileSaver(const std::string &fileName) {
         capfile.write((char *)&snaplen, 4);
         capfile.write((char *)&network, 4);
         capfile.flush();
+    } else {
+        msgError.assign((const char *)strerror(errno));
     }
 }
 
-DecnetFileSaver::~DecnetFileSaver() {
+FileSaver::~FileSaver() {
    if (capfile.is_open()) {
         capfile.close();
         fileOpened = false;
@@ -50,7 +54,7 @@ DecnetFileSaver::~DecnetFileSaver() {
 /*
  * Write a captured packet, with its header
  */
-void DecnetFileSaver::savePacket(const BYTE* packet, int len) {
+void FileSaver::savePacket(const BYTE* packet, int len) {
     int time;               /* Timestamp (seconds, standard unix) */
     int usec;               /* Microseconds (since last second) */
     int incl_len;           /* Captured length */

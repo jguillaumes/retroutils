@@ -5,8 +5,8 @@
  * Created on 28 / gener / 2015, 23:17
  */
 
-#ifndef DECNETFILESAVER_H
-#define	DECNETFILESAVER_H
+#ifndef FILESAVER_H
+#define	FILESAVER_H
 
 #include <string>
 
@@ -15,20 +15,19 @@
 
 using namespace std;
 
-class DecnetFileSaver : public DecnetListener {
+class FileSaver : public PacketSaver {
 public:
-    DecnetFileSaver(const std::string &filename);
-    virtual ~DecnetFileSaver();
+    FileSaver(const std::string &filename);
+    virtual ~FileSaver();
     bool isFileOpened() { return fileOpened; }
     bool virtual isSaving() { return isFileOpened(); }
-
-protected:
+    virtual const std::string getMsgError() { return msgError; };
     virtual void savePacket(const BYTE *packet, int size);
     
 private:
+    std::string msgError;
     std::ofstream capfile;
     bool fileOpened;
 };
 
-#endif	/* DECNETFILESAVER_H */
-
+#endif	/* FILESAVER_H */

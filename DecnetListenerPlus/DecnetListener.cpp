@@ -12,22 +12,11 @@
 
 using namespace std;
 
-DecnetListener::DecnetListener() {
-    capturing = false;
-}
-
-DecnetListener::~DecnetListener() {
-}
-
-
-void DecnetListener::setSaveAll(bool saveAll) {
-    this->saveAll = saveAll;
-}
-
-bool DecnetListener::captureLoop(void(*callback)(hello_t*)) {
+bool DecnetListener::captureLoop() {
 
     bool result = true;
     bool save = false;
+    bool handled = false;
     int size;
     struct frame_s *frame;
     struct hello_t *hello;
@@ -37,18 +26,23 @@ bool DecnetListener::captureLoop(void(*callback)(hello_t*)) {
     cont = true;
     while(cont) {
         save = saveAll;
-        packet = capturePacket(size);
+        handled = false;
+        packetHandler->handleIdle();
+        packet = packetReader->capturePacket(size);
         frame = (struct frame_s *) packet;
         etherType = frame->u.nonTagged.etherType;
-        hello = (struct hello_t *) (packet + OFS_FRAME);
+        packet += OFS_FRAME;
+        hello = (struct hello_t *) packet;
         if (etherType == ET_VLANTAG) {
             etherType = frame->u.tagged.etherType;
-            hello = (struct hello_t *) ((BYTE *)hello + 2);
+            packet += 2;
+            hello = (struct hello_t *) packet;
         }
         if (etherType == ET_DNETROUTING) {
             
             if ((*((BYTE *)hello) & 0x80) == 0x80) {
-                hello = (struct hello_t *) (((BYTE *)hello) + 1);
+                packet += 1;
+                hello = (struct hello_t *) packet;
             }
          /*
          * Now, if hello is not null then it points to the hello
@@ -58,18 +52,24 @@ bool DecnetListener::captureLoop(void(*callback)(hello_t*)) {
                 switch (hello -> routingFlags.type) {
                     case 6:         /* Endnode Hello */
                     case 5:         /* Router Hello  */
-                        callback(hello);
+                        handled = packetHandler->handleHello(packet);
                         break;
                     case 0:         /* Route init message */
+                        handled = packetHandler->handleInit(packet);
                         break;
                     case 4:         /* Level 2 routing message */
                     case 3:         /* Level 1 routing message */
+                        handled = packetHandler->handleRouting(packet);
                         break;
                     default:        /* Unknown message: log it if requested */                        
-                        save = isSaving();
+                        handled = packetHandler->handleUnknown(packet);
                         break;
+                }             
+                if (save) {
+                    if (saveAll || !handled) {
+                        packetSaver->savePacket((BYTE *)frame, size);                        
+                    }
                 }
-                if (save) savePacket(packet, size);
             }
         }
     }
