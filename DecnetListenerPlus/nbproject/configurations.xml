@@ -5,6 +5,7 @@
                    displayName="Header Files"
                    projectFiles="true">
       <itemPath>BasicHandler.h</itemPath>
+      <itemPath>CounterHandler.h</itemPath>
       <itemPath>DecnetDefs.h</itemPath>
       <itemPath>DecnetListener.h</itemPath>
       <itemPath>DecnetListenerPcap.h</itemPath>
@@ -23,6 +24,7 @@
                    displayName="Source Files"
                    projectFiles="true">
       <itemPath>BasicHandler.cpp</itemPath>
+      <itemPath>CounterHandler.cpp</itemPath>
       <itemPath>DecnetListener.cpp</itemPath>
       <itemPath>DecnetListenerPcap.cpp</itemPath>
       <itemPath>FileSaver.cpp</itemPath>
@@ -60,6 +62,10 @@
       <item path="BasicHandler.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="BasicHandler.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="CounterHandler.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="CounterHandler.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="DecnetDefs.h" ex="false" tool="3" flavor2="0">
       </item>
@@ -123,6 +129,10 @@
       </item>
       <item path="BasicHandler.h" ex="false" tool="3" flavor2="0">
       </item>
+      <item path="CounterHandler.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="CounterHandler.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="DecnetDefs.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="DecnetListener.cpp" ex="false" tool="1" flavor2="0">
@@ -184,6 +194,10 @@
       <item path="BasicHandler.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="BasicHandler.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="CounterHandler.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="CounterHandler.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="DecnetDefs.h" ex="false" tool="3" flavor2="0">
       </item>

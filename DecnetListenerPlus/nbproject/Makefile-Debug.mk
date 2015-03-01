@@ -36,6 +36,7 @@ OBJECTDIR=${CND_BUILDDIR}/${CND_CONF}/${CND_PLATFORM}
 # Object Files
 OBJECTFILES= \
 	${OBJECTDIR}/BasicHandler.o \
+	${OBJECTDIR}/CounterHandler.o \
 	${OBJECTDIR}/DecnetListener.o \
 	${OBJECTDIR}/DecnetListenerPcap.o \
 	${OBJECTDIR}/FileSaver.o \
@@ -71,6 +72,11 @@ ${OBJECTDIR}/BasicHandler.o: BasicHandler.cpp
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
 	$(COMPILE.cc) -g -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/BasicHandler.o BasicHandler.cpp
+
+${OBJECTDIR}/CounterHandler.o: CounterHandler.cpp 
+	${MKDIR} -p ${OBJECTDIR}
+	${RM} "$@.d"
+	$(COMPILE.cc) -g -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/CounterHandler.o CounterHandler.cpp
 
 ${OBJECTDIR}/DecnetListener.o: DecnetListener.cpp 
 	${MKDIR} -p ${OBJECTDIR}
