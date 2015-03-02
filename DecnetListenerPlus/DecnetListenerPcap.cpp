@@ -14,7 +14,7 @@
 #include "DecnetDefs.h"
 #include "DecnetListener.h"
 #include "DecnetListenerPcap.h"
-#include "BasicHandler.h"
+#include "CounterHandler.h"
 #include "FileSaver.h"
 #include "PcapReader.h"
 #include "BasicHandler.h"
@@ -24,7 +24,7 @@ using namespace std;
 DecnetListenerPcap::DecnetListenerPcap(const std::string& iface, 
                                        const std::string& fileName) {
     packetReader = new PcapReader(iface);
-    packetHandler = new BasicHandler();
+    packetHandler = new CounterHandler();
     if (packetReader->isCapturing()) {
         packetSaver = new FileSaver(fileName);
         if (!packetSaver->isSaving()) {

@@ -38,6 +38,17 @@ typedef unsigned int LONGWORD;
 typedef BYTE ETHADDR[6];
 typedef WORD DECADDR;
 
+/*
+ * Useful structures
+ */
+struct s_nodeinfo {
+    DECADDR address;
+    std::string name;
+    int hellotimer;
+    int nodetype;
+};
+typedef struct s_nodeinfo NODEINFO;
+
 
 #pragma pack(1)
 
