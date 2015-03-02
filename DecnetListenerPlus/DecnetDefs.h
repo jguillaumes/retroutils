@@ -10,6 +10,8 @@
 #ifndef DECNETDEFS_H
 #define	DECNETDEFS_H
 
+#include <string>
+
 /*
  * Macros to extract area and node from a decnet address word
  */
