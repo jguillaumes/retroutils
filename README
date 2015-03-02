@@ -21,6 +21,8 @@ vaxtools: Several VMS utilities (idle process killer, clock adjuster, "mainframe
 
 DecnetListener: Pcap-based sniffer for DECNET hello packets.
 
+DecnetListenerPlus: A little bit more sofisticante DecnetListener, written in C++.
+
 DecnetDisplay: Arduino sketch to drive a ILI9325C based TFT display and an ENC28J60 ethernet adapter to monitor
                and display DECNET adjacencies. Requires an Arduino Mega 2560 or an Arduino DUE (not tested).
                
