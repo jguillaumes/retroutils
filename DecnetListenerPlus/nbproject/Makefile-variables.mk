@@ -15,21 +15,21 @@ CND_PACKAGE_DIR_Debug=dist/Debug/GNU-Linux-x86/package
 CND_PACKAGE_NAME_Debug=decnetlistenerplus.tar
 CND_PACKAGE_PATH_Debug=dist/Debug/GNU-Linux-x86/package/decnetlistenerplus.tar
 # Release configuration
-CND_PLATFORM_Release=GNU-Linux-x86
-CND_ARTIFACT_DIR_Release=dist/Release/GNU-Linux-x86
+CND_PLATFORM_Release=CLang-MacOSX
+CND_ARTIFACT_DIR_Release=dist/Release/CLang-MacOSX
 CND_ARTIFACT_NAME_Release=decnetlistenerplus
-CND_ARTIFACT_PATH_Release=dist/Release/GNU-Linux-x86/decnetlistenerplus
-CND_PACKAGE_DIR_Release=dist/Release/GNU-Linux-x86/package
+CND_ARTIFACT_PATH_Release=dist/Release/CLang-MacOSX/decnetlistenerplus
+CND_PACKAGE_DIR_Release=dist/Release/CLang-MacOSX/package
 CND_PACKAGE_NAME_Release=decnetlistenerplus.tar
-CND_PACKAGE_PATH_Release=dist/Release/GNU-Linux-x86/package/decnetlistenerplus.tar
+CND_PACKAGE_PATH_Release=dist/Release/CLang-MacOSX/package/decnetlistenerplus.tar
 # Optimize_Size configuration
-CND_PLATFORM_Optimize_Size=GNU-Linux-x86
-CND_ARTIFACT_DIR_Optimize_Size=dist/Optimize_Size/GNU-Linux-x86
+CND_PLATFORM_Optimize_Size=CLang-MacOSX
+CND_ARTIFACT_DIR_Optimize_Size=dist/Optimize_Size/CLang-MacOSX
 CND_ARTIFACT_NAME_Optimize_Size=decnetlistenerplus
-CND_ARTIFACT_PATH_Optimize_Size=dist/Optimize_Size/GNU-Linux-x86/decnetlistenerplus
-CND_PACKAGE_DIR_Optimize_Size=dist/Optimize_Size/GNU-Linux-x86/package
+CND_ARTIFACT_PATH_Optimize_Size=dist/Optimize_Size/CLang-MacOSX/decnetlistenerplus
+CND_PACKAGE_DIR_Optimize_Size=dist/Optimize_Size/CLang-MacOSX/package
 CND_PACKAGE_NAME_Optimize_Size=decnetlistenerplus.tar
-CND_PACKAGE_PATH_Optimize_Size=dist/Optimize_Size/GNU-Linux-x86/package/decnetlistenerplus.tar
+CND_PACKAGE_PATH_Optimize_Size=dist/Optimize_Size/CLang-MacOSX/package/decnetlistenerplus.tar
 #
 # include compiler specific variables
 #

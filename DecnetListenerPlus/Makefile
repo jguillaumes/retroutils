@@ -57,7 +57,7 @@ build: .build-post
 # Add your pre 'build' code here...
 
 .build-post: .build-impl
-	size -B ${CND_ARTIFACT_PATH_${CONF}}
+	size ${CND_ARTIFACT_PATH_${CONF}}
 
 # clean
 clean: .clean-post
