@@ -8,7 +8,6 @@
 #define _DecnetDisplay_H_
 #include <Arduino.h>
 //add your includes for the project DecnetListener here
-#include <UTFT.h>
 
 
 //end of add your includes here
@@ -22,10 +21,10 @@ void setup();
 #endif
 
 #define MYAREA      7
-#define FONTWIDTH	16
-#define FONTHEIGHT	16
-#define PANWIDTH	318
-#define PANHEIGHT	198
+#define FONTWIDTH	12
+#define FONTHEIGHT	12
+#define PANWIDTH	158
+#define PANHEIGHT	100
 #define LINES		(PANHEIGHT/(FONTHEIGHT+2))
 #define COLUMNS		(PANWIDTH/(6*FONTWIDTH+2))
 
@@ -34,18 +33,23 @@ void setup();
 #define SECOND_MILLIS 1000
 #define CHECK_MILLIS 100
 
-#define BKG_STD		VGA_BLACK
-#define FG_STD		VGA_WHITE
-#define BKG_OFFLINE	VGA_BLACK
-#define FG_OFFLINE	VGA_GRAY
-#define BKG_NEW		VGA_BLUE
-#define FG_NEW		VGA_WHITE
-#define BKG_LOST	VGA_MAROON
-#define FG_LOST		VGA_RED
-#define BKG_ROUTER	VGA_GREEN
-#define FG_ROUTER	VGA_LIME
-#define BKG_ROUTER2	VGA_NAVY
-#define FG_ROUTER2	VGA_AQUA
+const int BKG_STD[3] = 		{0,0,0};
+const int FG_STD[3] = 		{255,255,255};
+const int BKG_OFFLINE[3] = 	{0,0,0};
+const int FG_OFFLINE[3] = 	{192,192,192};
+const int BKG_NEW[3] = 		{0,0,204};
+const int FG_NEW[3] = 		{255,255,255};
+const int BKG_LOST[3] = 	{102,51,0};
+const int FG_LOST[3] = 		{204,0,0};
+const int BKG_ROUTER[3] = 	{0,204,0};
+const int FG_ROUTER[3] = 	{128,255,0};
+const int BKG_ROUTER2[3] = 	{0,0,102};
+const int FG_ROUTER2[3] = 	{0,102,204};
+const int VGA_RED[3] = 		{204,0,0};
+const int VGA_BLACK[3] = 	{0,0,0};
+
+#define BIG_FONT	ucg_font_courR10
+#define SMALL_FONT	ucg_font_courR08
 
 enum nodeStatus_e { OFFLINE, HELLO, ENDNODE, ROUTER, ROUTER2, LOST };
 
@@ -160,9 +164,9 @@ void printHexByte(int b);
 void analyzePacket(uint16_t offset, uint16_t len);
 int getDecnetAddress(byte *macPtr);
 void getDecnetName(unsigned int addr, char *buffer);
-void displayString(UTFT &lcd, int col, int fila, char *string, int background, int color);
+void displayString(int col, int fila, char *string, int *background, int *color);
 struct node_s *dicotomica(unsigned int addr, int inici, int fi);
-void displayNode(UTFT &lcd, struct node_s &node);
+void displayNode(struct node_s &node);
 void displayClock(unsigned long millis);
 
 //Do not add code below this line

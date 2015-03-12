@@ -1,8 +1,9 @@
 // Do not remove the include below
+#include <Arduino.h>
 #include "DecnetDisplay.h"
 #include <EtherCard.h>
 #include <enc28j60.h>
-#include <UTFT.h>
+#include <ucgLib.h>
 
 /**
 
@@ -39,10 +40,9 @@
 
  **/
 
-UTFT lcd(ILI9325C, 41, 40, 39, 38); // Remember to change the model parameter to suit your display module!
+Ucglib8Bit ucg(ucg_dev_ili9325_18x240x320_itdb02, ucg_ext_ili9325_18, 0, 1, 2, 3, 4, 5, 6, 7, /* wr= */ 18 , /* cd= */ 19 , /* cs= */ 17, /* reset= */ 16 );
 
-extern uint8_t BigFont[];
-extern uint8_t SmallFont[];
+
 static const byte dnMac[] = { 0xaa, 0x00, 0x04, 0x00, 0xe7, 0x1f };
 static const byte mCastHelloEN[] = { 0xAB, 0x00, 0x00, 0x03, 0x00, 0x00 };
 static const byte mCastHelloRT[] = { 0xAB, 0x00, 0x00, 0x04, 0x00, 0x00 };
@@ -75,6 +75,17 @@ unsigned long secondControl = 0;
 int ledStatus = 0;
 long cycle = 0L;
 
+void initVariant() __attribute__((weak));
+void initVariant() { }
+
+int main() {
+	init();
+	initVariant();
+
+	setup();
+	while(1==1) loop();
+}
+
 void setup() {
 	int i;
 
@@ -85,12 +96,12 @@ void setup() {
 	Serial.println("Decnet HELLO listener");
 
 	Serial.println("Initializing LCD display...");
-	lcd.InitLCD();
-	lcd.setFont(BigFont);
-	lcd.clrScr();
-	lcd.setColor(VGA_GREEN);
-	lcd.setBackColor(VGA_BLACK);
-	lcd.drawRect(0, 0, 319, 199);
+	ucg.begin(UCG_FONT_MODE_SOLID);
+	ucg.clearScreen();
+	ucg.setColor(0,0,0);
+	ucg.drawBox(0,0,160,128);
+	ucg.setColor(0,204,0);
+	ucg.drawFrame(0,0,159,127);
 
 	Serial.println("Initializing ethernet device...");
 	card.initSPI();
@@ -105,7 +116,7 @@ void setup() {
 	Serial.println("Ready to go!");
 
 	for (i = 0; i < numNodes; i++) {
-		displayNode(lcd, nodes[i]);
+		displayNode(nodes[i]);
 	}
 	lastMilliseconds = millis();
 
@@ -152,7 +163,7 @@ void loop() {
 						nodes[i].status = LOST;
 						nodes[i].countdown = CYCLE_MILLIS;
 					}
-					displayNode(lcd, nodes[i]);
+					displayNode(nodes[i]);
 				}
 			}
 		}
@@ -211,7 +222,7 @@ void analyzePacket(uint16_t offset, uint16_t len) {
 					break;
 			}
 	}
-	displayNode(lcd, *node);
+	displayNode(*node);
 }
 
 void printHexByte(int b) {
@@ -270,19 +281,21 @@ void getDecnetName(unsigned int addr, char *buffer) {
 	sprintf(buffer, "%d.%d", area, node);
 }
 
-void displayString(UTFT &lcd, int col, int fila, char *string, int background,
-		int color) {
+void displayString(int col, int fila, char *string, const int *background,
+		const int *color) {
 
 	int x = 1 + (6 * FONTWIDTH + 2) * (col - 1);
 	int y = 1 + (FONTHEIGHT + 1) * (fila - 1);
 
-	lcd.setBackColor(background);
-	lcd.setColor(color);
-	lcd.print(string, x, y);
+	ucg.setFont(BIG_FONT);
+	ucg.setColor(1,background[0], background[1], background[2]);
+	ucg.setColor(0,color[0],color[1],color[2]);
+	ucg.setPrintPos(col, fila);
+	ucg.print(string);
 }
 
-void displayNode(UTFT &lcd, struct node_s &node) {
-	int back, color;
+void displayNode(struct node_s &node) {
+	const int *back, *color;
 
 	switch (node.status) {
 		case OFFLINE:
@@ -314,7 +327,7 @@ void displayNode(UTFT &lcd, struct node_s &node) {
 		color = VGA_BLACK;
 	}
 
-	displayString(lcd, node.dpyX, node.dpyY, node.name, back, color);
+	displayString(node.dpyX, node.dpyY, node.name, back, color);
 }
 
 struct node_s *dicotomica(unsigned int addr, int inici, int fi) {
@@ -366,9 +379,9 @@ void displayClock(unsigned long millis) {
 
 	sprintf(line, "Up: %4d:%02d:%02d", hrs, min, sec);
 
-	lcd.setFont(SmallFont);
-	lcd.setBackColor(VGA_GRAY);
-	lcd.setColor(VGA_YELLOW);
-	lcd.print(line, 208, 202);
-	lcd.setFont(BigFont);
+	ucg.setFont(SMALL_FONT);
+	ucg.setColor(1,224,224,224);	/* GRAY */
+	ucg.setColor(0,225,225,0);		/* YELLOW */
+	ucg.setPrintPos(80,150);
+	ucg.print(line);
 }
