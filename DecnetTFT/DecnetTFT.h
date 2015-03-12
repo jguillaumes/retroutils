@@ -24,11 +24,14 @@ void setup();
 #define FONTWIDTH	12
 #define FONTHEIGHT	12
 #define PANWIDTH	158
-#define PANHEIGHT	100
+#define PANHEIGHT	114
 #define LINES		(PANHEIGHT/(FONTHEIGHT+2))
 #define COLUMNS		(PANWIDTH/(6*FONTWIDTH+2))
 
-#define LED_PIN		13
+#define BL_PIN      3
+#define ETH_CS     7
+#define SD_CS      6
+#define TFT_CS    10
 #define CYCLE_MILLIS 60000
 #define SECOND_MILLIS 1000
 #define CHECK_MILLIS 100
@@ -41,10 +44,10 @@ const int BKG_NEW[3] = 		{0,0,204};
 const int FG_NEW[3] = 		{255,255,255};
 const int BKG_LOST[3] = 	{102,51,0};
 const int FG_LOST[3] = 		{204,0,0};
-const int BKG_ROUTER[3] = 	{0,204,0};
+const int BKG_ROUTER[3] = 	{51,102,0};
 const int FG_ROUTER[3] = 	{128,255,0};
 const int BKG_ROUTER2[3] = 	{0,0,102};
-const int FG_ROUTER2[3] = 	{0,102,204};
+const int FG_ROUTER2[3] = 	{102,255,255};
 const int VGA_RED[3] = 		{204,0,0};
 const int VGA_BLACK[3] = 	{0,0,0};
 
