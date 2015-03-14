@@ -20,6 +20,34 @@ void setup();
 } // extern "C"
 #endif
 
+/*
+ * Macros to extract area and node from a decnet address word
+ */
+#define NODE(addr)  ((addr)&0b1111111111)
+#define AREA(addr)  ((addr)>>10)
+
+/*
+ * Offsets into the ethernet frame
+ */
+#define OFS_ETHERTYPE       12
+#define OFS_FRAMESIZE       14
+#define OFS_FRAME           16
+
+/*
+ * Ethertype words
+ */
+#define ET_DNETROUTING      0x0360
+#define ET_VLANTAG          0x0081
+
+/*
+ * Useful typedefs
+ */
+typedef unsigned char BYTE;
+typedef unsigned short WORD;
+typedef unsigned int LONGWORD;
+typedef BYTE ETHADDR[6];
+typedef WORD DECADDR;
+
 #define MYAREA      7
 #define FONTWIDTH	12
 #define FONTHEIGHT	12
@@ -32,14 +60,16 @@ void setup();
 #define ETH_CS     7
 #define SD_CS      6
 #define TFT_CS    10
-#define CYCLE_MILLIS 60000
 #define SECOND_MILLIS 1000
 #define CHECK_MILLIS 100
+
+#define BCT3MULT  3    
+// Multiplier for adjacency timer - Architectural constant
 
 const int BKG_STD[3] = 		{0,0,0};
 const int FG_STD[3] = 		{255,255,255};
 const int BKG_OFFLINE[3] = 	{0,0,0};
-const int FG_OFFLINE[3] = 	{192,192,192};
+const int FG_OFFLINE[3] = 	{64,64,64};
 const int BKG_NEW[3] = 		{0,0,204};
 const int FG_NEW[3] = 		{255,255,255};
 const int BKG_LOST[3] = 	{102,51,0};
@@ -66,95 +96,107 @@ enum nodeStatus_e { OFFLINE, HELLO, ENDNODE, ROUTER, ROUTER2, LOST };
 #define ET_DNETROUTING      0x0360
 #define ET_VLANTAG          0x0081
 
-    /*
-     * Useful typdefs
-     */
-    typedef unsigned char BYTE;
-    typedef unsigned short WORD;
-    typedef unsigned long LONGWORD;
-    typedef BYTE MACADDR[6];
-    typedef WORD DNADDR;
+// Multicast Addresses
+static const byte mCastHelloEN[] = { 0xAB, 0x00, 0x00, 0x03, 0x00, 0x00 };
+static const byte mCastHelloRT[] = { 0xAB, 0x00, 0x00, 0x04, 0x00, 0x00 };
+static const byte mCastL2RT[]    = { 0x09, 0x00, 0x2b, 0x02, 0x00, 0x00 };
 
-    /*
-     * Routing flags
-     */
-    struct __attribute__((packed)) routing_flags_s {
-        unsigned int ctype :1;
-        unsigned int type :3;
-        unsigned int filler :3;
-        unsigned int padding :1;
-    };
+#pragma pack(1)
 
-    /*
-     * Node type and message flags
-     */
-    struct __attribute__((packed)) node_flags_s {
-        unsigned int nodeType :2;
-        unsigned int verificationRequired :1;
-        unsigned int rejectFlag :1;
-        unsigned int verificationFailed :1;
-        unsigned int noMulticast :1;
-        unsigned int blockingRequest :1;
-        unsigned int :1;
-    };
+/*
+ * Routing flags
+ */
+struct routing_flags_s {
+    unsigned int ctype : 1;
+    unsigned int type : 3;
+    unsigned int filler : 3;
+    unsigned int padding : 1;
+};
 
-    /*
-     * Init message
-     */
-    struct __attribute__((packed)) init_t {
-        struct routing_flags_s routingFlags;
-        DNADDR srcNode;
-        struct node_flags_s nodeInfo;
-        WORD blkSize;
-        BYTE version[3];
-        WORD timer;
-    };
-
-    /*
-     * Hello message
-     */
-    struct __attribute__((packed)) hello_t {
-        struct routing_flags_s routingFlags;
-        BYTE version[3];
-        BYTE filler[4];
-        DNADDR dnAddr;
-        struct node_flags_s nodeInfo;
-        WORD blkSize;
-        BYTE area;
-        BYTE seed[8];
-        MACADDR designatedRouter;
-        WORD helloTimer;
-        BYTE reserved;
-        BYTE data[1];
-    };
-
-    /*
-     *  Ethernet frame
-     */
-    struct __attribute__((packed)) frame_s {
-        MACADDR dst;
-        MACADDR src;
-        union {
-            struct {
-                WORD etherType;
-                WORD length;
-                BYTE payload[1];
-            } nonTagged;
-            struct {
-                WORD vlanType;
-                WORD etherType;
-                WORD length;
-                BYTE payload[1];
-            } tagged;
-        } u;
-    };
+/*
+ * Node type and message flags
+ */
+struct node_flags_s {
+    unsigned int nodeType : 2;
+    unsigned int verificationRequired : 1;
+    unsigned int rejectFlag : 1;
+    unsigned int verificationFailed : 1;
+    unsigned int noMulticast : 1;
+    unsigned int blockingRequest : 1;
+    unsigned int : 1;
+};
 
 
+/*
+ * Hello message
+ */
+struct hello_t {
+    struct routing_flags_s routingFlags;
+    BYTE version[3];
+    BYTE filler[4];
+    DECADDR dnAddr;
+    struct node_flags_s nodeInfo;
+    WORD blkSize;
+
+    union {
+
+        struct __attribute__((packed)) {
+            BYTE area;
+            BYTE seed[8];
+            ETHADDR designatedRouter;
+            WORD helloTimer;
+            BYTE reserved;
+            BYTE data[0];
+        }
+        endNode;
+
+        struct __attribute__((packed)) {
+            BYTE priority;
+            BYTE area;
+            WORD helloTimer;
+            BYTE reserved;
+
+            struct __attribute__((packed)) {
+                ETHADDR router;
+                BYTE priState;
+            }
+            eList[0];
+        }
+        router;
+    } u;
+};
+
+/*
+ *  Ethernet frame
+ */
+struct frame_s {
+    ETHADDR dst;
+    ETHADDR src;
+
+    union {
+
+        struct {
+            WORD etherType;
+            WORD length;
+            BYTE payload[0];
+        } nonTagged;
+
+        struct {
+            WORD vlanType;
+            WORD etherType;
+            WORD length;
+            BYTE payload[0];
+        } tagged;
+    } u;
+};
+
+#pragma pack()
 
 struct node_s {
 	unsigned int dnaddr;
 	char name[7];
-	long countdown;
+	long htimer;
+        long countdown;
 	enum nodeStatus_e status;
 	int dpyX;
 	int dpyY;
