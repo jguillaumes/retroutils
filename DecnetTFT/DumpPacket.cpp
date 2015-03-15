@@ -1,3 +1,8 @@
+/////////////////////////////////////////////////////////////////////////////
+// DECNET Hello listener V01.00                                            //
+/////////////////////////////////////////////////////////////////////////////
+// Packet dumper - for debugging only
+//
 #include <EtherCard.h>
 #include <enc28j60.h>
 
@@ -18,9 +23,9 @@ void dumpPacket(int offset, int len) {
   int c;
   char ascii[33];
   memset(ascii, 0, 33);
-  Serial.print("Paquet rebut (");
+  Serial.print("Paquet  (");
   Serial.print(numPk++);
-  Serial.print("), longitud=");
+  Serial.print("), len=");
   Serial.print(len);
   Serial.println(" bytes.");
   j = 0;

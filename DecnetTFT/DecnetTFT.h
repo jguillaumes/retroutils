@@ -1,8 +1,6 @@
-// Only modify this file to include
-// - function definitions (prototypes)
-// - include files
-// - extern variable definitions
-// In the appropriate section
+////////////////////////////////////////////////////////////////////////////
+// DECNET Hello listener V01.00                                           //
+////////////////////////////////////////////////////////////////////////////
 
 #ifndef _DecnetDisplay_H_
 #define _DecnetDisplay_H_
@@ -42,25 +40,31 @@ typedef unsigned int LONGWORD;
 typedef BYTE ETHADDR[6];
 typedef WORD DECADDR;
 
-#define MYAREA      7
+// Customization and TFT parameters
+// Increment MAX_NODES at your own risk!
+#define MAX_NODES      24
 #define FONTWIDTH	8
 #define FONTHEIGHT	10
 #define PANWIDTH	158
 #define PANHEIGHT	118
 #define LINES		(PANHEIGHT/(FONTHEIGHT+2))
 #define COLUMNS		(PANWIDTH/(6*FONTWIDTH+2))
-
-#define BL_PIN      3
-#define ETH_CS     7
-#define SD_CS      6
-#define TFT_CS    10
 #define SECOND_MILLIS 1000
 #define CHECK_MILLIS 100
 
-// Multiplier for adjacency timer - Architectural constant
-#define BCT3MULT  3    
+// PIN definitions.
+// BL_PIN must be a PWM capable one
+// ETH_CS, SD_CS and TFT_CS set the CS line for
+// the ethernet, the SD and the TFT respectively
+// The rest of the lines must be connected to the
+// hardware SPI pins
+#define BL_PIN     3
+#define ETH_CS     7
+#define SD_CS      6
+#define TFT_CS    10
 
-// Color definitions
+
+// Color definitions (RGB)
 const int BKG_STD[3] = 		{0,0,0};
 const int FG_STD[3] = 		{250,250,250};
 const int BKG_OFFLINE[3] = 	{0,0,0};
@@ -76,25 +80,72 @@ const int FG_ROUTER2[3] = 	{152,245,255};
 const int VGA_RED[3] = 		{204,0,0};
 const int VGA_BLACK[3] = 	{0,0,0};
 
-enum nodeStatus_e { OFFLINE=0, HELLO=1, ENDNODE=2, ROUTER=3, ROUTER2=4, LOST=5 };
+// DECNET related stuff
+// Multiplier for adjacency timer - Architectural constant
+#define BCT3MULT  3    
 
+enum nodeStatus_e { OFFLINE=0, HELLO=1, ENDNODE=2, ROUTER=3, ROUTER2=4, LOST=5 };
 #define NODE(addr)  ((addr)&0b1111111111)
 #define AREA(addr)  ((addr)>>10)
-
 
 #define ET_DNETROUTING      0x0360
 #define ET_VLANTAG          0x0081
 
+// Error messages. 24 bytes max!!
+//                             ....+....1....+....2.... 
+const char sERR00[] PROGMEM = "ERR: Card";        // 0
+const char sERR01[] PROGMEM = "ERR: EThernet";    // 1
+const char sERR02[] PROGMEM = "ERR: Nodefile";    // 2
+const char sERR03[] PROGMEM = "ERR: Alloc";       // 3
+const char sERR04[] PROGMEM = "ERR: no nodelist"; // 4
+const char sERR05[] PROGMEM = "ERR: EEPROM eye";  // 5
 
-// Error references
-extern const char* ERR00;
-extern const char* ERR01;
-extern const char* ERR02;
-extern const char* ERR03;
-extern const char* ERR04;
-extern const char* ERR05;
+//
+// Message strings. 24 bytes max!!!
+//                                ....+....1....+....2.... 
+const char sDNETLSN[] PROGMEM = { "DECNET Listener" };
+const char sINITLCD[] PROGMEM = { "Init LCD" };
+const char sINITETH[] PROGMEM = { "Init ETH" };
+const char sINITSD[]  PROGMEM = { "Init SD" };
+const char sOPENNF[]  PROGMEM = { "Open nodefile" };
+const char sOPENOK[]  PROGMEM = { "Open OK" };
+const char sREADFIL[] PROGMEM = { "Read nodefile" };
+const char sREADOK[]  PROGMEM = { "Read OK" };
+const char sRDEPROM[] PROGMEM = { "Read EEPROM" };
+const char sWREPROM[] PROGMEM = { "Write EEPROM" };
+const char sOKEPROM[] PROGMEM = { "EEPROM OK" };
+const char sREADY[]   PROGMEM = { "Ready!" };
 
-/*
+const char* const msg_table[] PROGMEM = { sDNETLSN, sINITLCD, sINITETH, sINITSD,  //  0 -  3
+                                          sOPENNF,  sOPENOK,  sREADFIL, sREADOK,  //  4 -  7
+                                          sRDEPROM, sWREPROM, sOKEPROM, sREADY,   //  8 - 11
+                                          sERR00,   sERR01,   sERR02,   sERR03,   // 12 - 15
+                                          sERR04,   sERR05                        // 16 - 17 
+                                      }; 
+
+#define DNETLSN  0
+#define INITLCD  1
+#define INITETH  2
+#define INITSD   3
+#define OPENNF   4
+#define OPENOK   5
+#define READFIL  6
+#define READOK   7
+#define RDEPROM  8
+#define WREPROM  9
+#define OKEPROM 10
+#define READY   11
+#define ERR00   12
+#define ERR01   13
+#define ERR02   14
+#define ERR03   15
+#define ERR04   16
+#define ERR05   17
+
+// 
+// Structures to map the ethernet packets
+//
+/*                                        
  * Routing flags
  */
 struct __attribute__((packed)) routing_flags_s {
@@ -184,9 +235,9 @@ struct __attribute__((packed)) frame_s {
 /*
 * Node database
 */
-struct node_s {
+struct __attribute__((packed)) node_s  {
 	unsigned int dnaddr;
-	char name[7];
+	char name[6];
 	int htimer;                 // Hello timer (T3) in seconds
         long countdown;              // Countdown in millis
 	enum nodeStatus_e status;
@@ -200,16 +251,17 @@ struct node_s {
 void dumpPacket(int offset, int len);
 void printHexByte(int b);
 #endif
+
 void analyzePacket(uint16_t offset, uint16_t len);
 int getDecnetAddress(byte *macPtr);
-void getDecnetName(unsigned int addr, char *
-
-er);
+void getDecnetName(unsigned int addr, char *er);
 void displayString(int col, int fila, char *string, int *background, int *color);
 struct node_s *dicotomica(unsigned int addr, int inici, int fi);
 void displayNode(struct node_s &node);
 void displayClock(unsigned long millis);
-void fatal(const char *);
+void fatal(int);
 bool loadFile(int *numNodes, struct node_s *nodes);
+void serialmem(int);
 //Do not add code below this line
 #endif /* _DecnetDisplay_H_ */
+
