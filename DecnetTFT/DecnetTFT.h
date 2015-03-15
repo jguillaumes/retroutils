@@ -91,6 +91,8 @@ extern const char* ERR00;
 extern const char* ERR01;
 extern const char* ERR02;
 extern const char* ERR03;
+extern const char* ERR04;
+extern const char* ERR05;
 
 /*
  * Routing flags

@@ -22,6 +22,8 @@
 #include <EtherCard.h>
 #include <enc28j60.h>
 #include <SPI.h>
+#include <EEPROM.h>
+
 
 
 #include "DecnetTFT.h"
@@ -54,17 +56,16 @@ void setup() {
   cons.begin(screen);
   cons.println("DECNET listener");
 
-  cons.println("LD nodefile...");
   loadFile(&numNodes, nodes);
 
-  cons.println("Init LCD");
+  cons.println("LCD");
   Serial.begin(9600);
   screen.background(0, 0, 0);
   screen.stroke(0, 204, 0);
   screen.noFill();
   screen.rect(0, 0, 159, 117);
 
-  Serial.println("Init ETH");
+  Serial.println("ETH");
   card.initSPI();
   if (card.initialize(sizeof Ethernet::buffer, dnMac, ETH_CS) == 0) {
     fatal(ERR01);
@@ -73,7 +74,8 @@ void setup() {
     card.enableMulticast();
   }
   Serial.println("Ready!");
-  Serial.println("Nodetable---");
+
+  Serial.println("Nodes---");
   for (i = 0; i < numNodes; i++) {
     Serial.print(nodes[i].dnaddr);
     Serial.print(": ");
@@ -220,12 +222,14 @@ void analyzePacket(uint16_t offset, uint16_t len) {
       }
       node->countdown = (long) node->htimer * BCT3MULT * 1000;
   }
-  if (stateChange == 1) { 
+  if (stateChange == 1) {
+#ifdef DEBUG 
       char msgbuff[80];
       sprintf(msgbuff, "Node: %d (%s), ht=%d, cd=%ld, st=%d", node->dnaddr, node->name,
                         node->htimer, node->countdown, node->status);
       Serial.println(msgbuff);
       Serial.flush();
+#endif
       displayNode(node);
   }
 }
@@ -337,10 +341,13 @@ void displayClock(unsigned long millis) {
 
 
 void fatal(const char *msg) {
+  screen.fill(0,0,0);
+  screen.noStroke();
+  screen.rect(0, 118, 160, 10);
+  
+  screen.noFill();
   screen.stroke(0, 0, 204);
-  screen.background(0, 0, 0);
-  screen.text(msg, 0, 40);
+  screen.text(msg, 0, 118);
   while (true);
 }
-
 
