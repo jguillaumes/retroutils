@@ -23,8 +23,9 @@ DecnetListener: Pcap-based sniffer for DECNET hello packets.
 
 DecnetListenerPlus: A little bit more sofisticante DecnetListener, written in C++.
 
-DecnetDisplay: Arduino sketch to drive a ILI9325C based TFT display and an ENC28J60 ethernet adapter to monitor
-               and display DECNET adjacencies. Requires an Arduino Mega 2560 or an Arduino DUE (not tested).
+DecnetTFT:     Arduino sketch to drive a ST7735 based TFT display and an ENC28J60 ethernet adapter to monitor
+               and display DECNET adjacencies. It works using an Arduino UNO and would probably als work
+	       with a Leonardo or Micro (not tested). I personally use a standalone MCU to run it.
                
 ====
 
