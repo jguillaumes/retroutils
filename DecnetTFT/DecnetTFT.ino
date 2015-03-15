@@ -1,100 +1,90 @@
+#include <ArduinoStream.h>
+#include <bufstream.h>
+#include <ios.h>
+#include <iostream.h>
+#include <istream.h>
+#include <MinimumSerial.h>
+#include <ostream.h>
+#include <Sd2Card.h>
+#include <SdBaseFile.h>
+#include <SdFat.h>
+#include <SdFatConfig.h>
+#include <SdFatmainpage.h>
+#include <SdFatUtil.h>
+#include <SdFile.h>
+#include <SdInfo.h>
+#include <SdSpi.h>
+#include <SdStream.h>
+#include <SdVolume.h>
+#include <StdioStream.h>
+
+#include <TFT.h>
 #include <EtherCard.h>
 #include <enc28j60.h>
 #include <SPI.h>
-#include <Ucglib.h>
+
 
 #include "DecnetTFT.h"
+#include "LCDConsole.h"
 
-//#define DEBUG 1
+TFT screen = TFT(10, 9, 8);
+LCDConsole cons;
 
-Ucglib_ST7735_18x128x160_HWSPI ucg(/*cd=*/ 9 , /*cs=10*/ TFT_CS, /*reset=*/ 8);
-
+// Multicast Addresses
+static const byte mCastHelloEN[] = { 0xAB, 0x00, 0x00, 0x03, 0x00, 0x00 };
+static const byte mCastHelloRT[] = { 0xAB, 0x00, 0x00, 0x04, 0x00, 0x00 };
+static const byte mCastL2RT[]    = { 0x09, 0x00, 0x2b, 0x02, 0x00, 0x00 };
 static const byte dnMac[] = { 0xaa, 0x00, 0x04, 0x00, 0xe7, 0x1f };
-static struct node_s nodes[] = {
-  { 7 * 1024 + 60, "BITXOV", 0, 0, OFFLINE, 1, 1 },
-  { 7 * 1024 + 61, "BITXOO", 0, 0, OFFLINE, 1, 2 },
-  { 7 * 1024 + 64, "BITXO1", 0, 0, OFFLINE, 1, 3 },
-  { 7 * 1024 + 65, "BITXO2", 0, 0, OFFLINE, 1, 4 },
-  { 7 * 1024 + 67, "BITXO4", 0, 0, OFFLINE, 1, 5 },
-  { 7 * 1024 + 68, "BITXO5", 0, 0, OFFLINE, 1, 6 },
-  { 7 * 1024 + 70, "BITXOT", 0, 0, OFFLINE, 1, 7 },
-  { 7 * 1024 + 71, "BITXOR", 0, 0, OFFLINE, 1, 8 },
-  { 7 * 1024 + 72, "BITXOM", 0, 0, OFFLINE, 2, 1 },
-  { 7 * 1024 + 74, "BITXOW", 0, 0, OFFLINE, 2, 2 },
-  { 7 * 1024 + 76, "BITXOX", 0, 0, OFFLINE, 2, 3 },
-  { 7 * 1024 + 77, "BITXOY", 0, 0, OFFLINE, 2, 4 },
-  { 7 * 1024 + 79, "BITXT0", 0, 0, OFFLINE, 2, 5 },
-  { 7 * 1024 + 80, "BITXT1", 0, 0, OFFLINE, 2, 6 },
-  { 7 * 1024 + 81, "BITXOZ", 0, 0, OFFLINE, 2, 7 },
-  { 7 * 1024 + 82, "BITXOU", 0, 0, OFFLINE, 2, 8 }
-};
-static int numNodes = 16;
 
-int numPk = 0;
+static struct node_s nodes[16];
+int numNodes;
+
 ENC28J60 card;
-byte ENC28J60::buffer[512];
+byte ENC28J60::buffer[128];
 unsigned long milliseconds = 0;
 unsigned long lastMilliseconds = 0;
 unsigned long secondControl = 0;
-char msgbuff[80];
 
 void setup() {
   int i;
 
   pinMode(BL_PIN, OUTPUT);
   analogWrite(BL_PIN, 200);
-  // digitalWrite(BL_PIN,HIGH);
+  screen.begin();
+  cons.begin(screen);
+  cons.println("DECNET listener");
 
-  pinMode(SD_CS, OUTPUT);
-  digitalWrite(SD_CS, LOW);
+  cons.println("LD nodefile...");
+  loadFile(&numNodes, nodes);
 
-#ifdef DEBUG
+  cons.println("Init LCD");
   Serial.begin(9600);
-  Serial.println("Decnet HELLO listener");
-  Serial.println("Initializing LCD display...");
-#endif
+  screen.background(0, 0, 0);
+  screen.stroke(0, 204, 0);
+  screen.noFill();
+  screen.rect(0, 0, 159, 117);
 
-  ucg.begin(UCG_FONT_MODE_SOLID);
-  ucg.setRotate270();
-  ucg.setFontPosTop();
-  ucg.clearScreen();
-  ucg.setFont(BIG_FONT);
-  ucg.setColor(0, 0, 0);
-  ucg.drawBox(0, 0, 160, 128);
-  ucg.setColor(0, 204, 0);
-  ucg.drawFrame(0, 0, 159, 116);
-
-#ifdef DEBUG
-  Serial.println("Initializing ethernet device...");
-#endif
-
+  Serial.println("Init ETH");
   card.initSPI();
   if (card.initialize(sizeof Ethernet::buffer, dnMac, ETH_CS) == 0) {
-    ucg.setColor(204,0,0);
-    ucg.setPrintPos(40, 70);
-    ucg.print("Ethernet device not accessible!");
-    while (true);
+    fatal(ERR01);
   } else {
     card.enableBroadcast();
     card.enableMulticast();
   }
-#ifdef DEBUG
-  Serial.println("Ready to go!");
-#endif
+  Serial.println("Ready!");
+  Serial.println("Nodetable---");
   for (i = 0; i < numNodes; i++) {
-    displayNode(nodes[i]);
+    Serial.print(nodes[i].dnaddr);
+    Serial.print(": ");
+    Serial.println(nodes[i].name);
+    displayNode(&nodes[i]);
   }
-  sprintf(msgbuff, "Up:");
+  Serial.println("End---.");
 
-  ucg.setFontMode(UCG_FONT_MODE_SOLID);
-  ucg.setFont(SMALL_FONT);
-  ucg.setColor(0, 225, 225, 0);   /* YELLOW */
-  ucg.setColor(1, 0, 0, 0);
-  ucg.setPrintPos(60, 118);
-  ucg.print(msgbuff);
-
+  screen.stroke(0, 225, 224); // Yellow (B-G-R)
+  screen.text("Up:", 0, 118);
   lastMilliseconds = millis();
-
 }
 
 void loop() {
@@ -107,7 +97,7 @@ void loop() {
   if (len > 0) analyzePacket(0, len);
 
   milliseconds = millis();
-  
+
   if (milliseconds - secondControl >= SECOND_MILLIS) {
     secondControl = milliseconds;
     displayClock(secondControl);
@@ -121,6 +111,7 @@ void loop() {
       if (nodes[i].status != OFFLINE) {
         nodes[i].countdown -= interval;
 #ifdef DEBUG
+        char msgbuff[40];
         sprintf(msgbuff, "Node: %d (%s), ht=%ld cd=%ld, intv=%ld", i, nodes[i].name,
                 nodes[i].htimer, nodes[i].countdown, interval);
         Serial.println(msgbuff);
@@ -132,9 +123,9 @@ void loop() {
             nodes[i].htimer = 0;
           } else {
             nodes[i].status = LOST;
-            nodes[i].countdown = nodes[i].htimer * BCT3MULT;
+            nodes[i].countdown = (long) nodes[i].htimer * BCT3MULT * 1000;
           }
-          displayNode(nodes[i]);
+          displayNode(&nodes[i]);
         }
       }
     }
@@ -161,24 +152,18 @@ void analyzePacket(uint16_t offset, uint16_t len) {
       && memcmp(mCastHelloRT, frame->dst, 6) != 0
       && memcmp(mCastL2RT, frame->dst, 6) != 0) return;
 
-#ifdef DEBUG
-  dumpPacket(offset, len);
-   sprintf(msgbuff, "Et: %x", frame->u.nonTagged.etherType); 
-   Serial.println(msgbuff);
-#endif
-
   if (frame->u.nonTagged.etherType == ET_DNETROUTING) {
-      hello = (struct hello_t *) &(frame->u.nonTagged.payload);
+    hello = (struct hello_t *) & (frame->u.nonTagged.payload);
   } else if (frame->u.nonTagged.etherType = ET_VLANTAG) {
     if (frame->u.tagged.etherType == ET_DNETROUTING) {
-      hello = (struct hello_t *) &(frame->u.tagged.payload);
+      hello = (struct hello_t *) & (frame->u.tagged.payload);
     } else {
       return;
     }
   }
 
   if ((*((BYTE *)hello) & 0x80) == 0x80) {
-    hello = (struct hello_t *) ((char *)hello+1);
+    hello = (struct hello_t *) ((char *)hello + 1);
   }
 
   if (hello->routingFlags.type != 6 &&
@@ -186,19 +171,14 @@ void analyzePacket(uint16_t offset, uint16_t len) {
 
   dnAddr = hello->dnAddr;
 
-#ifdef DEBUG
-   sprintf(msgbuff, "dnAddr: %d", dnAddr);
-   Serial.println(msgbuff);
-#endif
-
   if (AREA(dnAddr) != MYAREA) return;
-  
-  
+
+
   if (hello->routingFlags.type != 6 && hello->routingFlags.type != 5) return;
 
   node = dicotomica(dnAddr, 0, numNodes - 1);
   if (node == NULL) return;
-  
+
 
   switch (node->status) {
     case OFFLINE:
@@ -206,92 +186,50 @@ void analyzePacket(uint16_t offset, uint16_t len) {
       node->status = HELLO;
       stateChange = 1;
       if (hello->nodeInfo.nodeType == 3) {
-          node->htimer = hello->u.endNode.helloTimer * 1000;
+        node->htimer = hello->u.endNode.helloTimer ;
       } else {
-          node->htimer = hello->u.router.helloTimer * 1000;
+        node->htimer = hello->u.router.helloTimer;
       }
-      node->countdown = node->htimer * BCT3MULT; 
+      node->countdown = (long) node->htimer * BCT3MULT * 1000;
       break;
     case HELLO:
     case ENDNODE:
     case ROUTER:
       switch (hello->nodeInfo.nodeType) {
         case 3:
-          node->htimer = hello->u.endNode.helloTimer * 1000;
+          node->htimer = hello->u.endNode.helloTimer;
           if (node->status != ENDNODE) {
             node->status = ENDNODE;
             stateChange = 1;
           }
           break;
         case 2:
-          node->htimer = hello->u.router.helloTimer * 1000;
+          node->htimer = hello->u.router.helloTimer;
           if (node->status != ROUTER) {
             node->status = ROUTER;
             stateChange = 1;
           }
           break;
         case 1:
-          node->htimer = hello->u.router.helloTimer * 1000;
+          node->htimer = hello->u.router.helloTimer;
           if (node->status != ROUTER2) {
             node->status = ROUTER2;
             stateChange = 1;
           }
           break;
       }
-      node->countdown = node->htimer * BCT3MULT;
+      node->countdown = (long) node->htimer * BCT3MULT * 1000;
   }
-#ifdef DEBUG
-        sprintf(msgbuff, "Node: %d (%s), ht=%ld, cd=%ld",node->dnaddr, node->name,
-                node->htimer, nodes->countdown);
-        Serial.println(msgbuff);
-#endif
-  if (stateChange == 1) displayNode(*node);
+  if (stateChange == 1) { 
+      char msgbuff[80];
+      sprintf(msgbuff, "Node: %d (%s), ht=%d, cd=%ld, st=%d", node->dnaddr, node->name,
+                        node->htimer, node->countdown, node->status);
+      Serial.println(msgbuff);
+      Serial.flush();
+      displayNode(node);
+  }
 }
 
-void printHexByte(int b) {
-  int high = b / 16;
-  int low = b % 16;
-  Serial.print(high, HEX);
-  Serial.print(low, HEX);
-}
-
-#ifdef DEBUG
-void dumpPacket(int offset, int len) {
-  int i, j, k;
-  int c;
-  char ascii[33];
-  memset(ascii, 0, 33);
-  Serial.print("Paquet rebut (");
-  Serial.print(numPk++);
-  Serial.print("), longitud=");
-  Serial.print(len);
-  Serial.println(" bytes.");
-  j = 0;
-  for (i = 0; i < len; i++) {
-    if (j < 32) {
-      c = ENC28J60::buffer[offset + i];
-      Serial.print(" ");
-      printHexByte(c);
-      if (isprint(c)) {
-        ascii[j] = c;
-      } else {
-        ascii[j] = '.';
-      }
-      j += 1;
-    } else {
-      j = 0;
-      Serial.print(" ");
-      Serial.println(ascii);
-      memset(ascii, 0, 33);
-    }
-  }
-  for (; j < 32; j++) {
-    Serial.print("   ");
-  }
-  Serial.print(" ");
-  Serial.println(ascii);
-}
-#endif
 
 int getDecnetAddress(byte *macPtr) {
   return *(macPtr + 5) * 256 + *(macPtr + 4);
@@ -310,18 +248,19 @@ void displayString(int col, int fila, char *string, const int *background,
   int x = 1 + (6 * FONTWIDTH + 2) * (col - 1);
   int y = 1 + (FONTHEIGHT + 1) * (fila - 1);
 
-  ucg.setFontMode(UCG_FONT_MODE_SOLID);
-  ucg.setFont(BIG_FONT);
-  ucg.setColor(0, color[0], color[1], color[2]);
-  ucg.setColor(1, background[0], background[1], background[2]);
-  ucg.setPrintPos(x, y);
-  ucg.print(string);
+  screen.noStroke();
+  screen.fill(background[2], background[1], background[0]); /* B-G-R */
+  screen.rect(x, y, 6 * FONTWIDTH, FONTHEIGHT);
+
+  screen.noFill();
+  screen.stroke(color[2], color[1], color[0]); /* B-G-R */
+  screen.text(string, x, y);
 }
 
-void displayNode(struct node_s &node) {
+void displayNode(struct node_s *node) {
   const int *back, *color;
 
-  switch (node.status) {
+  switch (node->status) {
     case OFFLINE:
       back = BKG_OFFLINE;
       color = FG_OFFLINE;
@@ -351,7 +290,7 @@ void displayNode(struct node_s &node) {
       color = VGA_BLACK;
   }
 
-  displayString(node.dpyX, node.dpyY, node.name, back, color);
+  displayString(node->ncol, node->nrow, node->name, back, color);
 }
 
 struct node_s *dicotomica(unsigned int addr, int inici, int fi) {
@@ -363,18 +302,7 @@ struct node_s *dicotomica(unsigned int addr, int inici, int fi) {
       || (inici > fi))
     return NULL;
 
-#ifdef DEBUG
-  Serial.print(inici); Serial.print(" ");
-  Serial.print(fi); Serial.print(" ");
-  Serial.print(addr); Serial.print(" | ");
-#endif
-
   nodePtr = &nodes[pivot];
-
-#ifdef DEBUG
-  Serial.print(pivot); Serial.print("->");
-  Serial.print(nodePtr->dnaddr); Serial.print(":"); Serial.println(nodePtr->name);
-#endif
 
   if (nodePtr->dnaddr == addr) {
     return nodePtr;
@@ -387,9 +315,8 @@ struct node_s *dicotomica(unsigned int addr, int inici, int fi) {
   }
 }
 
-
 void displayClock(unsigned long millis) {
-  char line[80];
+  static char line[9];
   int sec, min, hrs;
 
   unsigned long clock = millis / 1000;
@@ -398,15 +325,22 @@ void displayClock(unsigned long millis) {
 
   min = clock % 60;
   clock /= 60;
-
   hrs = clock;
 
-  sprintf(line, "%2d:%02d:%02d", hrs, min, sec);
+  screen.stroke(0,0,0);
+  screen.text(line, 40, 118);
 
-  ucg.setFontMode(UCG_FONT_MODE_SOLID);
-  ucg.setFont(SMALL_FONT);
-  ucg.setColor(0, 225, 225, 0);   /* YELLOW */
-  ucg.setColor(1, 0, 0, 0);
-  ucg.setPrintPos(90, 118);
-  ucg.print(line);
+  sprintf(line, "%2d:%02d:%02d", hrs, min, sec);
+  screen.stroke(0, 225, 225);
+  screen.text(line, 40, 118);
 }
+
+
+void fatal(const char *msg) {
+  screen.stroke(0, 0, 204);
+  screen.background(0, 0, 0);
+  screen.text(msg, 0, 40);
+  while (true);
+}
+
+

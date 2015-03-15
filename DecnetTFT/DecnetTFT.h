@@ -9,7 +9,6 @@
 #include <Arduino.h>
 //add your includes for the project DecnetListener here
 
-
 //end of add your includes here
 #ifdef __cplusplus
 extern "C" {
@@ -20,18 +19,13 @@ void setup();
 } // extern "C"
 #endif
 
+// #define DEBUG 1
+
 /*
  * Macros to extract area and node from a decnet address word
  */
 #define NODE(addr)  ((addr)&0b1111111111)
 #define AREA(addr)  ((addr)>>10)
-
-/*
- * Offsets into the ethernet frame
- */
-#define OFS_ETHERTYPE       12
-#define OFS_FRAMESIZE       14
-#define OFS_FRAME           16
 
 /*
  * Ethertype words
@@ -49,10 +43,10 @@ typedef BYTE ETHADDR[6];
 typedef WORD DECADDR;
 
 #define MYAREA      7
-#define FONTWIDTH	12
-#define FONTHEIGHT	12
+#define FONTWIDTH	8
+#define FONTHEIGHT	10
 #define PANWIDTH	158
-#define PANHEIGHT	114
+#define PANHEIGHT	118
 #define LINES		(PANHEIGHT/(FONTHEIGHT+2))
 #define COLUMNS		(PANWIDTH/(6*FONTWIDTH+2))
 
@@ -63,50 +57,45 @@ typedef WORD DECADDR;
 #define SECOND_MILLIS 1000
 #define CHECK_MILLIS 100
 
-#define BCT3MULT  3    
 // Multiplier for adjacency timer - Architectural constant
+#define BCT3MULT  3    
 
+// Color definitions
 const int BKG_STD[3] = 		{0,0,0};
-const int FG_STD[3] = 		{255,255,255};
+const int FG_STD[3] = 		{250,250,250};
 const int BKG_OFFLINE[3] = 	{0,0,0};
 const int FG_OFFLINE[3] = 	{64,64,64};
-const int BKG_NEW[3] = 		{0,0,204};
+const int BKG_NEW[3] = 		{0,0,205};
 const int FG_NEW[3] = 		{255,255,255};
-const int BKG_LOST[3] = 	{102,51,0};
-const int FG_LOST[3] = 		{204,0,0};
-const int BKG_ROUTER[3] = 	{51,102,0};
-const int FG_ROUTER[3] = 	{128,255,0};
-const int BKG_ROUTER2[3] = 	{0,0,102};
-const int FG_ROUTER2[3] = 	{102,255,255};
+const int BKG_LOST[3] = 	{128,0,0};
+const int FG_LOST[3] = 		{255,228,225};
+const int BKG_ROUTER[3] = 	{0,100,0};
+const int FG_ROUTER[3] = 	{202,255,0};
+const int BKG_ROUTER2[3] = 	{25,25,112};
+const int FG_ROUTER2[3] = 	{152,245,255};
 const int VGA_RED[3] = 		{204,0,0};
 const int VGA_BLACK[3] = 	{0,0,0};
 
-#define BIG_FONT	ucg_font_courR10
-#define SMALL_FONT	ucg_font_courR08
-
-enum nodeStatus_e { OFFLINE, HELLO, ENDNODE, ROUTER, ROUTER2, LOST };
+enum nodeStatus_e { OFFLINE=0, HELLO=1, ENDNODE=2, ROUTER=3, ROUTER2=4, LOST=5 };
 
 #define NODE(addr)  ((addr)&0b1111111111)
 #define AREA(addr)  ((addr)>>10)
 
-#define OFS_ETHERTYPE       12
-#define OFS_FRAMESIZE       2
-#define OFS_FRAME           2
 
 #define ET_DNETROUTING      0x0360
 #define ET_VLANTAG          0x0081
 
-// Multicast Addresses
-static const byte mCastHelloEN[] = { 0xAB, 0x00, 0x00, 0x03, 0x00, 0x00 };
-static const byte mCastHelloRT[] = { 0xAB, 0x00, 0x00, 0x04, 0x00, 0x00 };
-static const byte mCastL2RT[]    = { 0x09, 0x00, 0x2b, 0x02, 0x00, 0x00 };
 
-#pragma pack(1)
+// Error references
+extern const char* ERR00;
+extern const char* ERR01;
+extern const char* ERR02;
+extern const char* ERR03;
 
 /*
  * Routing flags
  */
-struct routing_flags_s {
+struct __attribute__((packed)) routing_flags_s {
     unsigned int ctype : 1;
     unsigned int type : 3;
     unsigned int filler : 3;
@@ -116,7 +105,7 @@ struct routing_flags_s {
 /*
  * Node type and message flags
  */
-struct node_flags_s {
+struct __attribute__((packed)) node_flags_s {
     unsigned int nodeType : 2;
     unsigned int verificationRequired : 1;
     unsigned int rejectFlag : 1;
@@ -130,7 +119,7 @@ struct node_flags_s {
 /*
  * Hello message
  */
-struct hello_t {
+struct __attribute__((packed)) hello_t {
     struct routing_flags_s routingFlags;
     BYTE version[3];
     BYTE filler[4];
@@ -139,7 +128,7 @@ struct hello_t {
     WORD blkSize;
 
     union {
-
+        // Hello for EndNodes
         struct __attribute__((packed)) {
             BYTE area;
             BYTE seed[8];
@@ -149,7 +138,7 @@ struct hello_t {
             BYTE data[0];
         }
         endNode;
-
+        // Hello for routers
         struct __attribute__((packed)) {
             BYTE priority;
             BYTE area;
@@ -169,19 +158,19 @@ struct hello_t {
 /*
  *  Ethernet frame
  */
-struct frame_s {
+struct __attribute__((packed)) frame_s {
     ETHADDR dst;
     ETHADDR src;
 
     union {
-
-        struct {
+        // Non-tagged (no VLAN)
+        struct __attribute__((packed)) {
             WORD etherType;
             WORD length;
             BYTE payload[0];
         } nonTagged;
-
-        struct {
+        // Tagged (VLAN)
+        struct __attribute__((packed)) {
             WORD vlanType;
             WORD etherType;
             WORD length;
@@ -190,29 +179,35 @@ struct frame_s {
     } u;
 };
 
-#pragma pack()
-
+/*
+* Node database
+*/
 struct node_s {
 	unsigned int dnaddr;
 	char name[7];
-	long htimer;
-        long countdown;
+	int htimer;                 // Hello timer (T3) in seconds
+        long countdown;              // Countdown in millis
 	enum nodeStatus_e status;
-	int dpyX;
-	int dpyY;
+        BYTE nrow;
+        BYTE ncol;
 };
 
 //add your function definitions for the project DecnetListener here
 
+#ifdef DEBUG
 void dumpPacket(int offset, int len);
 void printHexByte(int b);
+#endif
 void analyzePacket(uint16_t offset, uint16_t len);
 int getDecnetAddress(byte *macPtr);
-void getDecnetName(unsigned int addr, char *buffer);
+void getDecnetName(unsigned int addr, char *
+
+er);
 void displayString(int col, int fila, char *string, int *background, int *color);
 struct node_s *dicotomica(unsigned int addr, int inici, int fi);
 void displayNode(struct node_s &node);
 void displayClock(unsigned long millis);
-
+void fatal(const char *);
+bool loadFile(int *numNodes, struct node_s *nodes);
 //Do not add code below this line
 #endif /* _DecnetDisplay_H_ */
