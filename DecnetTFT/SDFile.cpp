@@ -231,12 +231,15 @@ void saveEEPROM(int numNodes, struct node_s *nodes) {
   eadr = EEPROM_BASE;
   for (i=0; i<numNodes; i++) {
     l = nodes[i].dnaddr % 256;
-    if (EEPROM.read(eadr) != l) EEPROM.write(eadr++, l);
+    if (EEPROM.read(eadr) != l) EEPROM.write(eadr, l);
+    eadr += 1;
     h = nodes[i].dnaddr / 256;
-    if (EEPROM.read(eadr) != h) EEPROM.write(eadr++, h);
+    if (EEPROM.read(eadr) != h) EEPROM.write(eadr, h);
+    eadr += 1;
     for (j=0; j<6; j++) {
-      if (EEPROM.read(eadr) != (BYTE) nodes[i].name[j])
-        EEPROM.write(eadr++, (BYTE) nodes[i].name[j]);
+      if (EEPROM.read(eadr) != (BYTE) nodes[i].name[j]) 
+        EEPROM.write(eadr, (BYTE) nodes[i].name[j]);
+      eadr += 1;
     } 
   }
   cons.printmem(OKEPROM);;
