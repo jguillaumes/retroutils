@@ -30,7 +30,6 @@
 FILE *capture;          /* Packet capture file */
 int cont;               /* Continue flag       */
 static int invokeCommands = 0;
-extern FILE *yyin;
 sigjmp_buf env;
 
 /*

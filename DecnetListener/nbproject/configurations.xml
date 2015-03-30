@@ -38,6 +38,9 @@
         <rebuildPropChanged>false</rebuildPropChanged>
       </toolsSet>
       <compileType>
+        <cTool>
+          <commandlineTool>gcc</commandlineTool>
+        </cTool>
         <linkerTool>
           <linkerLibItems>
             <linkerLibLibItem>pcap</linkerLibLibItem>
@@ -70,7 +73,7 @@
     </conf>
     <conf name="Release" type="1">
       <toolsSet>
-        <compilerSet>CLang|CLang</compilerSet>
+        <compilerSet>default</compilerSet>
         <dependencyChecking>true</dependencyChecking>
         <rebuildPropChanged>false</rebuildPropChanged>
       </toolsSet>
@@ -78,7 +81,7 @@
         <cTool>
           <developmentMode>5</developmentMode>
           <stripSymbols>true</stripSymbols>
-          <commandLine>-Oz</commandLine>
+          <commandLine>-Os</commandLine>
         </cTool>
         <ccTool>
           <developmentMode>5</developmentMode>
