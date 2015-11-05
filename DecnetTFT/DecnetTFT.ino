@@ -130,6 +130,7 @@ void setup() {
 
   // Prepare the screen (and from now on, use the UART
   // to log stuff).
+  SPI.setClockDivider(SPI_CLOCK_DIV2);
   cons.printmem(INITLCD);
   Serial.begin(9600);
   screen.background(0, 0, 0);
@@ -140,6 +141,7 @@ void setup() {
   // Initialize the ethernet device
   serialmem(INITETH);
   card.initSPI();
+  SPI.setClockDivider(SPI_CLOCK_DIV2);
   if (card.initialize(sizeof Ethernet::buffer, dnMac, ETH_CS) == 0) {
     fatal(ERR01);
   } else {

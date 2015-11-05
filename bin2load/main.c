@@ -48,7 +48,7 @@ void syntax(char const *msg) {
 int main(int argc, char **argv)
 {
     char msgBuffer[128];            // Work space for error messages
-    char c;                         // Parsed option
+    int c;                          // Parsed option
     char *octAddr       = NULL;     // Parameter: octal base address
     char *inputBinFile  = NULL;     // Parameter: input file name
     char *outputLdaFile = NULL;     // Parameter: output file name
